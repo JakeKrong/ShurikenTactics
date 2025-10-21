@@ -1,6 +1,7 @@
 # Shuriken Tactics #
 
-![Shuriken Tactics Proof-of-Concept](https://github.com/user-attachments/assets/8bcf8324-fda6-4c56-b6d7-8d2e5e75d61f)
+![Shuriken Tactics Proof-of-Concept](https://github.com/user-attachments/assets/2c71fd6c-33c9-4030-93ec-78bb268d6191)
+
 
 ************
 **Shuriken Tactics** is a concept / learning project built in **C++** using **SFML 3.0** and a custom **Entity-Component-System (ECS)** architecture.  
