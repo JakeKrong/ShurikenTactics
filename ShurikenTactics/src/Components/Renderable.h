@@ -7,19 +7,28 @@
 //const float DEFAULT_SIZE = 30.0f;
 //sf::Color DEFAULT_COLOR{ sf::Color::White };
 
+enum class RenderLayer {
+	Background,
+	UI,
+	GameObject2,
+	Player,
+	GameObject1
+};
+
 struct Renderable {
 	sf::Vector2f size{ 10.0f, 10.0f };
 	bool visible{ true };
-	
 	sf::Texture* texture = nullptr;
-	bool animated = false;
-	sf::Vector2u spriteSheetDim {1,1} ;
-	int totalFrames = 1;
-	float frameTime = 1.0f;
 	bool flipX = false;
-	std::function<void(sf::Transform&)> transformFunc{};
+	std::function<void(sf::Transform&)> transformFunction{}; //For transform related display mods (rotation, shaking, etc...)
+};
 
-	float timeSinceLastFrame = 0.0f;
+struct AnimationData {
+	sf::Vector2u spriteSheetDim{ 1,1 };		//Declare sprite sheet layout, x * y (Program reads sprite sheet from left to right, top to bottom)
+	int totalFrames = 1;					//Total frames included in sheet 
+	float frameTime = 1.0f;					//Time each frame should be played for
+
 	int currentFrame = 0;
+	float timeSinceLastFrame = 0.0f;
 	sf::IntRect activeSprite{};
 };

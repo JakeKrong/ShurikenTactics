@@ -1,3 +1,4 @@
+#pragma once
 #include "ISystem.h"
 #include "Collider.h"
 #include <functional>
@@ -17,7 +18,6 @@ struct AABB {
 };
 
 
-#pragma once
 class ColliderSystem : public ISystem{
 public:
 	ColliderSystem();
@@ -29,7 +29,6 @@ private:
 	bool CheckRectRectCollision(const sf::FloatRect&, const sf::FloatRect&);
 	bool CheckCircleCircleCollision(const sf::CircleShape&, const sf::CircleShape&);
 	bool checkRectCircleCollision(const sf::FloatRect&, const sf::CircleShape&);
-	std::string FindIntersectionSurface(const sf::FloatRect rect1, const sf::FloatRect rect2);
 	bool AABBIntersect(const AABB&, const AABB&, AABB*);
 
 	CollisionKey GenerateCollisionKey(ColliderType a, ColliderType b);

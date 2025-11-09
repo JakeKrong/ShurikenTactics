@@ -1,5 +1,8 @@
 #include "Game.h"
 
+//Test
+#include <iostream>
+
 Game::Game() :
 	m_Window(sf::RenderWindow(sf::VideoMode({1280,720}), "Shuriken Tactics", sf::Style::Default))
 {
@@ -21,6 +24,9 @@ void Game::Run() {
 				m_Window.close();
 			}
 			m_StateManager.HandleEvent(*optEvent);
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)) {
+				std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+			}
 		}
 		m_StateManager.Update(deltaTime, m_Window);
 		m_StateManager.Render(m_Window, deltaTime);

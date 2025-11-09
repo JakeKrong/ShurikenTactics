@@ -9,7 +9,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include <string>
+#define PI 3.14159265f
 
 ColliderSystem::ColliderSystem() {
 	RegisterHandlers();
@@ -21,6 +21,9 @@ void ColliderSystem::Update() {
 	for (Entity entity : m_Entities) {
 		auto& transform = m_World->GetComponent<Transform>(entity);
 		auto& collider = m_World->GetComponent<Collider>(entity);
+
+		if (collider.frameBuffer > 0) collider.frameBuffer -= 1; //Decrement collision detection buffer
+
 		for (auto& shapeVariant : collider.entityColliders) {
 			std::visit([&](auto& shape) {
 				using ShapeType = std::decay_t<decltype(shape)>;
@@ -46,11 +49,15 @@ void ColliderSystem::Update() {
 
 			try {
 				if (CheckCollision(entA, entB)) {
-					CollisionKey collPairing = GenerateCollisionKey(m_World->GetComponent<Collider>(entA).type,
+					CollisionKey collisionPairing = GenerateCollisionKey(m_World->GetComponent<Collider>(entA).type,
 																	m_World->GetComponent<Collider>(entB).type);
-					auto handlerIt = m_CollisionHandlers.find(collPairing);
-					handlerIt->second(entA, entB);
-					//std::cout << "Collision";
+
+					auto collisionHandler = m_CollisionHandlers.find(collisionPairing)->second;
+
+					if (m_World->GetComponent<Collider>(entA).type < m_World->GetComponent<Collider>(entB).type)
+						collisionHandler(entA, entB);
+					else
+						collisionHandler(entB, entA);
 				}
 			}
 			catch (const std::exception& e) {
@@ -63,6 +70,8 @@ void ColliderSystem::Update() {
 bool ColliderSystem::CheckCollision(Entity entA, Entity entB) {
 	Collider& colliderA = m_World->GetComponent<Collider>(entA);
 	Collider& colliderB = m_World->GetComponent<Collider>(entB);
+
+	if (colliderA.frameBuffer > 0 || colliderB.frameBuffer > 0) return false; //If have collision buffer, skip
 
 	//If collision pairing not found, return false
 	if (m_CollisionHandlers.find(GenerateCollisionKey(colliderA.type, colliderB.type)) == m_CollisionHandlers.end()) return false;
@@ -119,6 +128,7 @@ bool ColliderSystem::checkRectCircleCollision(const sf::FloatRect& rect, const s
 }
 
 CollisionKey ColliderSystem::GenerateCollisionKey(ColliderType a, ColliderType b) {
+	if (a > b) std::swap(a, b);
 	return (static_cast<CollisionKey>(a) << 8 | static_cast<CollisionKey>(b));
 }
 
@@ -128,22 +138,80 @@ void ColliderSystem::RegisterHandlers() {
 	m_CollisionHandlers[GenerateCollisionKey(ColliderType::ObstacleBox, ColliderType::ProjectileBox)] = [this](Entity a, Entity b)
 		{
 			sf::FloatRect obstacleCollider{ m_World->GetComponent<Transform>(a).position , m_World->GetComponent<Renderable>(a).size };
-			sf::FloatRect projectileCollider{ m_World->GetComponent<Transform>(b).position, {30,30} };
-
+			//sf::FloatRect projectileCollider{ m_World->GetComponent<Transform>(b).position, m_World->GetComponent<Renderable>(b).size };
 			AABB obstacleAABB{ obstacleCollider.position, obstacleCollider.size };
-			AABB projectileAABB{ projectileCollider.position, projectileCollider.size };
-			AABB overlap;
-			if (!AABBIntersect(obstacleAABB , projectileAABB, & overlap)) return;
+
+			Transform projectileTrans = m_World->GetComponent<Transform>(b);
+			sf::CircleShape projectileCollider = std::get<sf::CircleShape>(m_World->GetComponent<Collider>(b).entityColliders[0]);
+
+			sf::Vector2f circleCenter = projectileCollider.getPosition() + sf::Vector2f(projectileCollider.getRadius(), projectileCollider.getRadius());
+			float closestX = std::clamp(circleCenter.x, obstacleCollider.position.x, obstacleCollider.position.x + obstacleCollider.size.x);
+			float closestY = std::clamp(circleCenter.y, obstacleCollider.position.y, obstacleCollider.position.y + obstacleCollider.size.y);
 
 			sf::Vector2f& proVelocity = m_World->GetComponent<Physics>(b).velocity;
-			if (overlap.size.x < overlap.size.y) proVelocity = { -proVelocity.x, proVelocity.y };
-			else proVelocity = { proVelocity.x, -proVelocity.y };
 
-			m_World->GetComponent<Lifetime>(b).durability -= 1;
+			float distLeft = std::abs(closestX - obstacleAABB.left());
+			float distRight = std::abs(closestX - obstacleAABB.right());
+			float distTop = std::abs(closestY - obstacleAABB.top());
+			float distBottom = std::abs(closestY - obstacleAABB.bottom());
+
+			std::cout << std::abs(std::min(distLeft, distRight) - std::min(distTop, distBottom)) << "\n";
+
+			//Check edge case of corners hit
+			if (std::abs(std::min(distLeft, distRight) - std::min(distTop, distBottom)) < 0.3f) {	//0.3f: Arbitrary number cap to determine corner hit (difference of top/bottom & right/left obstacle intersection, can be adjusted)
+				float proSpeed = std::sqrt(proVelocity.x * proVelocity.x + proVelocity.y * proVelocity.y);
+				int deflectionDegree;
+
+				if (closestY == obstacleAABB.bottom()) {
+					if (closestX == obstacleAABB.right()) deflectionDegree = 45;
+					else deflectionDegree = 135;
+				}
+				else {
+					if (closestX == obstacleAABB.left()) deflectionDegree = 235;
+					else deflectionDegree = 315;
+				}
+
+				float radian = deflectionDegree * PI / 180.0f;
+				proVelocity = sf::Vector2f{ std::cos(radian), std::sin(radian) } *proSpeed;
+
+				//std::cout << "Corner Collision. " << std::min(distLeft, distRight) << " | " << std::min(distTop, distBottom) << " . " << closestX << "|" << closestY << " . " << proVelocity.x << "|" << proVelocity.y << std::endl;
+				m_World->GetComponent<Lifetime>(b).durability -= 1;
+				m_World->GetComponent<Collider>(b).frameBuffer = 2;
+			}
+			//Simple X Collision
+			else if (std::min(distLeft, distRight) < std::min(distTop, distBottom) &&
+				((distLeft < distRight && proVelocity.x > 0) ||
+				(distRight < distLeft && proVelocity.x < 0)))
+			{
+				proVelocity.x = -proVelocity.x;
+				//std::cout << "X Collision. " << std::min(distLeft, distRight) << " | " << std::min(distTop, distBottom) << " . " << closestX << "|" << closestY << " . " << proVelocity.x << "|" << proVelocity.y << std::endl;
+				m_World->GetComponent<Lifetime>(b).durability -= 1;
+				m_World->GetComponent<Collider>(b).frameBuffer = 2;
+			}
+			// Simple Y collision
+			else if (std::min(distLeft, distRight) > std::min(distTop, distBottom) && 
+					((distTop < distBottom && proVelocity.y > 0) ||
+					(distBottom < distTop && proVelocity.y < 0))) 
+			{
+					proVelocity.y = -proVelocity.y;
+					//std::cout << "Y Collision. " << std::min(distLeft, distRight) << " | " << std::min(distTop, distBottom) << " . " << closestX << "|" << closestY << " . " << proVelocity.x << "|" << proVelocity.y << std::endl;
+					m_World->GetComponent<Lifetime>(b).durability -= 1;
+					m_World->GetComponent<Collider>(b).frameBuffer = 2;
+			}
+			// Likely corner collision
+			//else {
+			//	std::cout << "Corner Collision. " << std::min(distLeft, distRight) << " | " << std::min(distTop, distBottom) << " . " << closestX << "|" << closestY << " . " << proVelocity.x << "|" << proVelocity.y << std::endl;
+			//	sf::Vector2f collisionNormal = circleCenter - sf::Vector2f{ closestX, closestY };
+			//	float lengthSquared = collisionNormal.x * collisionNormal.x + collisionNormal.y * collisionNormal.y;
+			//	if (lengthSquared == 0) return;
+			//	collisionNormal /= std::sqrt(lengthSquared);
+			//	float dotProd = proVelocity.x * collisionNormal.x + proVelocity.y * collisionNormal.y;
+			//	proVelocity -= 2.0f * dotProd * collisionNormal;
+			//}
 		};
 
 	//Player -> Obstacle Collision Logic
-	m_CollisionHandlers[GenerateCollisionKey(ColliderType::ObstacleBox, ColliderType::PlayerBox)] = [this](Entity obs, Entity plyr)
+	m_CollisionHandlers[GenerateCollisionKey(ColliderType::PlayerBox, ColliderType::ObstacleBox)] = [this](Entity plyr, Entity obs)
 		{
 			auto& obstacleTrans = m_World->GetComponent<Transform>(obs);
 			auto& playerTrans = m_World->GetComponent<Transform>(plyr);
@@ -218,8 +286,8 @@ void ColliderSystem::RegisterHandlers() {
 
 	m_CollisionHandlers[GenerateCollisionKey(ColliderType::TargetBox, ColliderType::ProjectileBox)] = [this](Entity a, Entity b)
 		{
-			m_World->GetComponent<Lifetime>(a).durability -= 3;
-			m_World->GetComponent<Lifetime>(b).durability -= 3;
+			m_World->GetComponent<Lifetime>(a).durability = 0;
+			m_World->GetComponent<Lifetime>(b).durability = 0;
 		};
 }
 

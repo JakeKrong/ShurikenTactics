@@ -6,6 +6,10 @@
 class RenderSystem : public ISystem {
 public:
 	void Update(sf::RenderWindow&, const float&);
-	void SetAnimationFrame(Renderable&, const float&);
+	void SetAnimationFrame(const Renderable&, AnimationData&, const float&);
 	void SetWorld(World*);
+
+private:
+	int m_EntityVectorSize = 0;
+	int m_LastElement = 0;
 };

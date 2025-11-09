@@ -13,7 +13,9 @@ public:
 
 	bool WasLeftClicked() const { return m_MouseLeftClicked; }
 	sf::Vector2i GetMousePosition() const { return m_MousePosition; }
+
 	void SetKeyboardDisabled(bool);
+	void SetWindowFocused(bool);
 
 	bool m_A_KeyPressed{ false };
 	bool m_D_KeyPressed{ false };
@@ -28,4 +30,5 @@ private:
 	bool m_MouseDisabled{ false };
 	bool m_KeyboardDisabled{ false };
 	bool m_UiMode{ false };
+	bool m_WindowFocused{ true };
 };

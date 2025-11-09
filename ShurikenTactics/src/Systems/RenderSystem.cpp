@@ -7,10 +7,12 @@
 #include "Transform.h"
 //Test
 #include <iostream>
+#include "Button.h"
 
 void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime) {
 	if (!m_World) return;
 	renderWindow.clear();
+
 	for (const Entity& systemEnt : m_Entities) {
 		const Transform& transformComp = m_World->GetComponent<Transform>(systemEnt);
 		Renderable& renderComp = m_World->GetComponent<Renderable>(systemEnt);
@@ -26,9 +28,10 @@ void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime
 		if (renderComp.texture != nullptr){
 			renderable.setTexture(renderComp.texture);
 			//Check if it's animated
-			if (renderComp.animated) {
-				SetAnimationFrame(renderComp, deltaTime);
-				renderable.setTextureRect(renderComp.activeSprite);
+			if (m_World->HasComponent<AnimationData>(systemEnt)) {
+				AnimationData& animationComp = m_World->GetComponent<AnimationData>(systemEnt);
+				SetAnimationFrame(renderComp, animationComp, deltaTime);
+				renderable.setTextureRect(animationComp.activeSprite);
 			}
 		}
 		//Set default shape and colour if no texture is found
@@ -50,28 +53,28 @@ void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime
 	renderWindow.display();
 }
 
-void RenderSystem::SetAnimationFrame(Renderable& renderComp, const float& deltaTime) {
+void RenderSystem::SetAnimationFrame(const Renderable& renderableComp, AnimationData& animationComp, const float& deltaTime) {
 
-	renderComp.timeSinceLastFrame += deltaTime;
+	animationComp.timeSinceLastFrame += deltaTime;
 
-	if (renderComp.timeSinceLastFrame >= renderComp.frameTime) {
-		renderComp.currentFrame = (renderComp.currentFrame + 1) % renderComp.totalFrames;
+	if (animationComp.timeSinceLastFrame >= animationComp.frameTime) {
+		animationComp.currentFrame = (animationComp.currentFrame + 1) % animationComp.totalFrames;
 
-		const sf::Vector2u& textureDim = renderComp.texture->getSize();
+		const sf::Vector2u& textureDim = renderableComp.texture->getSize();
 		sf::Vector2u frameSize = {
-			textureDim.x / renderComp.spriteSheetDim.x,
-			textureDim.y / renderComp.spriteSheetDim.y
+			textureDim.x / animationComp.spriteSheetDim.x,
+			textureDim.y / animationComp.spriteSheetDim.y
 		};
 
-		int column = renderComp.currentFrame % renderComp.spriteSheetDim.x;
-		int row = renderComp.currentFrame / renderComp.spriteSheetDim.x;
+		int column = animationComp.currentFrame % animationComp.spriteSheetDim.x;
+		int row = animationComp.currentFrame / animationComp.spriteSheetDim.x;
 
-		renderComp.activeSprite = {
+		animationComp.activeSprite = {
 			{column * static_cast<int>(frameSize.x), row * static_cast<int>(frameSize.y)},
 			{static_cast<int>(frameSize.x), static_cast<int>(frameSize.y)}
 		};
 
-		renderComp.timeSinceLastFrame -= renderComp.frameTime;
+		animationComp.timeSinceLastFrame -= animationComp.frameTime;
 	}
 }
 

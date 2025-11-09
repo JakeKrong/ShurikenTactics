@@ -54,13 +54,7 @@ public:
 
 	template<typename T>
 	bool HasComponent(Entity entity) {
-		try {
-			m_ComponentManager->GetComponentData<T>(entity);
-			return true;
-		}
-		catch (...) {
-			return false;
-		}
+		return m_ComponentManager->HasComponent<T>(entity);
 	}
 
 	// *** System Functions *** //

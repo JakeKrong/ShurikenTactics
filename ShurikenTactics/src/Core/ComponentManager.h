@@ -56,6 +56,11 @@ public:
 		return m_ComponentArray[m_EntityToIndexMap[ent]];
 	}
 
+	bool HasComponentData(Entity ent) {
+		if (m_EntityToIndexMap.find(ent) != m_EntityToIndexMap.end()) return true;
+		else return false;
+	}
+
 	void EntityDestroyed(Entity ent) override {
 		if (m_EntityToIndexMap.find(ent) != m_EntityToIndexMap.end()) {
 			RemoveComponent(ent);
@@ -147,6 +152,16 @@ public:
 		std::type_index componentType = typeid(T);
 		assert(m_ComponentArraysMap.find(componentType) != m_ComponentArraysMap.end() && "Trying to Get a Non-Registered Component!");
 		return GetComponentArray<T>()->GetComponentData(ent);
+	}
+
+	template<typename T>
+	bool HasComponent(Entity ent) {
+		std::type_index componentType = typeid(T);
+		if (m_ComponentArraysMap.find(componentType) == m_ComponentArraysMap.end()) {
+			return false;
+		}
+		if (GetComponentArray<T>()->HasComponentData(ent)) return true;
+		return false;
 	}
 
 private:

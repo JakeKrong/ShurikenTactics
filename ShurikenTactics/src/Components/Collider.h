@@ -18,6 +18,8 @@ struct Collider {
 	std::vector<ColliderShape> entityColliders;
 	ColliderType type{};
 
+	int frameBuffer = 0;
+
 	void AddRect(sf::FloatRect collider) {
 		entityColliders.emplace_back(collider);
 	}

@@ -36,24 +36,24 @@ void MainMenuState::Enter() {  //Initialise Main Menu
 	//Background
 	Entity background = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(background, { {0.0f,0.0f} });
-	world.AddComponentToEntity<Renderable>(background, {{ 1280, 720 }, true, &m_Game->m_TextureManager.Load("Dojo_TitleScreen.png"), false});
+	world.AddComponentToEntity<Renderable>(background, {{ 1280, 720 }, true, &m_Game->m_TextureManager.Load("Dojo_TitleScreen.png")});
 
 	//Title
 	Entity title = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(title, { {430.0f,60.0f} });
-	world.AddComponentToEntity<Renderable>(title, { { 420, 260 }, true, &m_Game->m_TextureManager.Load("ShurikenTactics_Title.png"), false });
+	world.AddComponentToEntity<Renderable>(title, { { 420, 260 }, true, &m_Game->m_TextureManager.Load("ShurikenTactics_Title.png")});
 
 	//Buttons
 	Entity startButton = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(startButton, { {430.0f,400.0f} });
-	world.AddComponentToEntity<Renderable>(startButton, { { 420, 100 }, true, &m_Game->m_TextureManager.Load("Button_StartGame.png"), false });
+	world.AddComponentToEntity<Renderable>(startButton, { { 420, 100 }, true, &m_Game->m_TextureManager.Load("Button_StartGame.png")});
 	world.AddComponentToEntity<Button>(startButton, { {420, 100}, [this]() {
 		this->m_Game->m_StateManager.ChangeState(CreateScope<PlayingState>(this->m_Game));
 	}});
 
 	Entity quitButton = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(quitButton, { {430.0f, 530.0f} });
-	world.AddComponentToEntity<Renderable>(quitButton, { { 420, 100 }, true, &m_Game->m_TextureManager.Load("Button_QuitGame.png"), false });
+	world.AddComponentToEntity<Renderable>(quitButton, { { 420, 100 }, true, &m_Game->m_TextureManager.Load("Button_QuitGame.png")});
 	world.AddComponentToEntity<Button>(quitButton, { {420, 100}, [this]() {
 		this->m_Game->GetWindow().close();
 	} });
@@ -62,7 +62,7 @@ void MainMenuState::Enter() {  //Initialise Main Menu
 	sf::Sound& bgm = m_Game->m_SoundManager.Load("Afternoon_In_Konoha.mp3");
 	bgm.setLooping(true);
 	bgm.setVolume(10);
-	bgm.play();
+	//bgm.play();
 }
 
 void MainMenuState::Exit() {

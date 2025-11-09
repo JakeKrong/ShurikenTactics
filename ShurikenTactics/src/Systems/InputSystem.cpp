@@ -3,7 +3,7 @@
 #include "Components.h"
 
 void InputSystem::Update(sf::RenderWindow& renderWindow) {
-	if (!m_World) return;
+	if (!m_World || !m_WindowFocused) return;
 
 	if (!m_MouseDisabled) {
 		m_MouseLeftClicked = sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
@@ -33,3 +33,4 @@ void InputSystem::Update(sf::RenderWindow& renderWindow) {
 void InputSystem::HandleEvents(const sf::Event& event) { }
 
 void InputSystem::SetKeyboardDisabled(bool boolean) { m_KeyboardDisabled = boolean; }
+void InputSystem::SetWindowFocused(bool boolean) { m_WindowFocused = boolean; }
