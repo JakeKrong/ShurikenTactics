@@ -36,24 +36,24 @@ void MainMenuState::Enter() {  //Initialise Main Menu
 	//Background
 	Entity background = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(background, { {0.0f,0.0f} });
-	world.AddComponentToEntity<Renderable>(background, {{ 1280, 720 }, true, &m_Game->m_TextureManager.Load("Dojo_TitleScreen.png")});
+	world.AddComponentToEntity<Renderable>(background, {{ 1280, 720 }, RenderLayer::Background,true, &m_Game->m_TextureManager.Load("Dojo_TitleScreen")});
 
 	//Title
 	Entity title = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(title, { {430.0f,60.0f} });
-	world.AddComponentToEntity<Renderable>(title, { { 420, 260 }, true, &m_Game->m_TextureManager.Load("ShurikenTactics_Title.png")});
+	world.AddComponentToEntity<Renderable>(title, { { 420, 260 }, RenderLayer::UI,true, &m_Game->m_TextureManager.Load("ShurikenTactics_Title")});
 
 	//Buttons
 	Entity startButton = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(startButton, { {430.0f,400.0f} });
-	world.AddComponentToEntity<Renderable>(startButton, { { 420, 100 }, true, &m_Game->m_TextureManager.Load("Button_StartGame.png")});
+	world.AddComponentToEntity<Renderable>(startButton, { { 420, 100 }, RenderLayer::UI, true, &m_Game->m_TextureManager.Load("Button_StartGame")});
 	world.AddComponentToEntity<Button>(startButton, { {420, 100}, [this]() {
 		this->m_Game->m_StateManager.ChangeState(CreateScope<PlayingState>(this->m_Game));
 	}});
 
 	Entity quitButton = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(quitButton, { {430.0f, 530.0f} });
-	world.AddComponentToEntity<Renderable>(quitButton, { { 420, 100 }, true, &m_Game->m_TextureManager.Load("Button_QuitGame.png")});
+	world.AddComponentToEntity<Renderable>(quitButton, { { 420, 100 }, RenderLayer::UI, true, &m_Game->m_TextureManager.Load("Button_QuitGame")});
 	world.AddComponentToEntity<Button>(quitButton, { {420, 100}, [this]() {
 		this->m_Game->GetWindow().close();
 	} });

@@ -24,6 +24,8 @@ void Game::Run() {
 				m_Window.close();
 			}
 			m_StateManager.HandleEvent(*optEvent);
+
+			//## For debugging ##//
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)) {
 				std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 			}
@@ -34,5 +36,5 @@ void Game::Run() {
 }
 
 sf::RenderWindow& Game::GetWindow() { return m_Window; };
-
 World& Game::GetWorld() { return m_World; };
+TextureManager& Game::GetTextureManager() { return m_TextureManager; };

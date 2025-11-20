@@ -1,5 +1,6 @@
 #pragma once
 #include "ISystem.h"
+#include <set>
 
 class LifetimeSystem : public ISystem {
 public:

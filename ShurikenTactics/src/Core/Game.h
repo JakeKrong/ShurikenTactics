@@ -6,7 +6,9 @@
 #include "TextureManager.h"
 #include "SoundManager.h"
 #include "FontManager.h"
+
 #include "MainMenuState.h" //Can include all states into one file later
+#include "PlayingState.h"
 
 class Game {
 public:
@@ -16,7 +18,7 @@ public:
 
 	sf::RenderWindow& GetWindow();
 	World& GetWorld();
-	
+	TextureManager& GetTextureManager();
 
 private:
 	sf::RenderWindow m_Window;

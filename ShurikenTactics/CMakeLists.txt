@@ -15,7 +15,7 @@ add_executable (ShurikenTactics
 "src/Core/Game.h" "src/Core/Game.cpp"
 "src/Assets/TextureManager.h" "src/Assets/TextureManager.cpp" "src/Assets/FontManager.h" "src/Assets/FontManager.cpp" "src/Assets/SoundManager.h" "src/Assets/SoundManager.cpp" 
 "src/Core/StateManager.h" "src/Core/StateManager.cpp" 
-"src/States/IState.h" "src/States/MainMenuState.h" "src/States/MainMenuState.cpp" "src/States/PlayingState.h" "src/States/PlayingState.cpp")
+"src/States/IState.h" "src/States/MainMenuState.h" "src/States/MainMenuState.cpp" "src/States/PlayingState.h" "src/States/PlayingState.cpp" "src/Core/Prefabs.h")
 
 target_include_directories(ShurikenTactics PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src

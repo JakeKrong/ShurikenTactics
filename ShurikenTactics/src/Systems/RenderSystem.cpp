@@ -5,13 +5,24 @@
 #include "RenderSystem.h"
 #include  "World.h"
 #include "Transform.h"
-//Test
-#include <iostream>
-#include "Button.h"
 
 void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime) {
 	if (!m_World) return;
 	renderWindow.clear();
+
+	//Sort m_Entities sequence when change detected
+	if (m_EntityVectorSize != m_Entities.size() || m_LastElement != m_Entities[m_Entities.size() - 1]) {
+		m_EntityVectorSize = m_Entities.size();
+
+		std::sort(m_Entities.begin(), m_Entities.end(),
+			[this](const Entity& a, const Entity& b) {
+				const Renderable& renderA = m_World->GetComponent<Renderable>(a);
+				const Renderable& renderB = m_World->GetComponent<Renderable>(b);
+				return renderA.layer < renderB.layer;
+			});
+
+			m_LastElement = m_Entities[m_EntityVectorSize - 1];
+	}
 
 	for (const Entity& systemEnt : m_Entities) {
 		const Transform& transformComp = m_World->GetComponent<Transform>(systemEnt);
@@ -47,7 +58,6 @@ void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime
 			renderable.setOrigin({ renderable.getOrigin().x + renderComp.size.x, renderable.getOrigin().y });
 		}
 
-		//Can add addtional logic to check for renderable layers before calling .draw()
 		renderWindow.draw(renderable);
 	}
 	renderWindow.display();

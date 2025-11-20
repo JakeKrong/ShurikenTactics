@@ -1,6 +1,7 @@
 #include "PlayingState.h"
 #include "Game.h"
 #include "Components.h"
+#include "Prefabs.h"
 
 #include <functional>
 #include <random>
@@ -10,7 +11,8 @@ PlayingState::PlayingState(Game* game) :
 	m_Game(game) {
 }
 
-void PlayingState::Enter() {  //Initialise Main Menu
+//Initialise Stage upon entering
+void PlayingState::Enter() {  
 	World& world = m_Game->GetWorld();
 
 	//Register Components
@@ -62,71 +64,35 @@ void PlayingState::Enter() {  //Initialise Main Menu
 	lifetimeSignature.set(world.GetComponentID<Lifetime>());
 	world.SetSystemSignature<LifetimeSystem>(lifetimeSignature);
 
+	PrefabGen::game = m_Game;
+	m_Game->GetTextureManager().InitGameAnimationData();
+
 	// *** Set Entites *** //
 	//Background
 	Entity background = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(background, { {0.0f,0.0f} });
-	world.AddComponentToEntity<Renderable>(background, { { 1280, 720 }, true, &m_Game->m_TextureManager.Load("Dojo_Background.png")});
+	world.AddComponentToEntity<Renderable>(background, { { 1280, 720 }, RenderLayer::Background, true, &m_Game->m_TextureManager.Load("Dojo_Background")});
 
 	//Floor
-	Entity floor = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(floor, { {0.0f,680} });
-	world.AddComponentToEntity<Renderable>(floor, { { 1300.0f, 50 }, true, &m_Game->m_TextureManager.Load("Wood_Floor.png")});
-	sf::FloatRect floorHitbox{ {0.0f,680},{ 1300.0f, 50 } };
-	world.AddComponentToEntity<Collider>(floor, {{floorHitbox}, ColliderType::ObstacleBox });
+	PrefabGen::Platform({ 0,680 }, { 1300,50 });
 
 	//Ceiling
-	Entity ceiling = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(ceiling, { {0.0f,0} });
-	world.AddComponentToEntity<Renderable>(ceiling, { { 1300.0f, 50 }, true, &m_Game->m_TextureManager.Load("Wood_Floor.png")});
-	sf::FloatRect floor2Hitbox{ {0.0f,0},{ 1300.0f, 50 } };
-	world.AddComponentToEntity<Collider>(ceiling, { {floor2Hitbox}, ColliderType::ObstacleBox });
+	PrefabGen::Platform({ 0,0 }, { 1300,50 });
 
-	//Wall
-	Entity wallLeft = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(wallLeft, { {0.0f,0.0f} });
-	world.AddComponentToEntity<Renderable>(wallLeft, { { 50, 800 }, true, &m_Game->m_TextureManager.Load("Wooden_Pillar.png")});
-	sf::FloatRect wallLeftHitbox{ {0.0f,0},{ 50, 800 } };
-	world.AddComponentToEntity<Collider>(wallLeft, { {wallLeftHitbox}, ColliderType::ObstacleBox });
-
-	Entity wallRight = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(wallRight, { {1230.0f,0.0f} });
-	world.AddComponentToEntity<Renderable>(wallRight, { { 50, 800 }, true, &m_Game->m_TextureManager.Load("Wooden_Pillar.png")});
-	sf::FloatRect wallRightHitBox{ {1230.0f,0},{ 50, 800 } };
-	world.AddComponentToEntity<Collider>(wallRight, { {wallRightHitBox}, ColliderType::ObstacleBox });
+	//Walls
+	PrefabGen::Wall({ 0,0 }, { 50, 800 });
+	PrefabGen::Wall({ 1230,0 }, { 50, 800 });
 
 	//Extra Platforms
-	Entity platform1 = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(platform1, { {0.0f,500.0f} });
-	world.AddComponentToEntity<Renderable>(platform1, { { 600.0f, 50 }, true, &m_Game->m_TextureManager.Load("Wood_Floor.png")});
-	sf::FloatRect platform1Hitbox{ {0.0f,500.0f},{ 600.0f, 50 } };
-	world.AddComponentToEntity<Collider>(platform1, { {platform1Hitbox}, ColliderType::ObstacleBox });
-
-	Entity platform2 = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(platform2, { {700.0f,200.0f} });
-	world.AddComponentToEntity<Renderable>(platform2, { { 800.0f, 50 }, true, &m_Game->m_TextureManager.Load("Wood_Floor.png")});
-	sf::FloatRect platform2Hitbox{ {700.0f,200.0f},{ 800.0f, 50 } };
-	world.AddComponentToEntity<Collider>(platform2, { {platform2Hitbox}, ColliderType::ObstacleBox });
-
-	Entity platform3 = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(platform3, { {0.0f,300.0f} });
-	world.AddComponentToEntity<Renderable>(platform3, { { 300.0f, 50 }, true, &m_Game->m_TextureManager.Load("Wood_Floor.png")});
-	sf::FloatRect platform3Hitbox{ {0.0f,300.0f},{ 300.0f, 50 } };
-	world.AddComponentToEntity<Collider>(platform3, { {platform3Hitbox}, ColliderType::ObstacleBox });
-
+	PrefabGen::Platform({ 0,500 }, { 600,50 });
+	PrefabGen::Platform({ 700,200 }, { 800,50 });
+	PrefabGen::Platform({ 0,300 }, { 300,50 });
 
 	//Test target
 	SpawnTarget();
 
 	//Player
-	Entity player = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(player, { {400.0f,500.0f} });
-	world.AddComponentToEntity<Renderable>(player, { { 60, 100 }, true, &m_Game->m_TextureManager.Load("Player_Idle_Sprite.png") });
-	world.AddComponentToEntity<AnimationData>(player, { { 4,1 }, 4, 0.15f });
-	world.AddComponentToEntity<Player>(player, {100});
-	sf::FloatRect playerHitbox{ {400.0f,100.0f},{ 60, 100 } };
-	world.AddComponentToEntity<Collider>(player, { { playerHitbox }, ColliderType::PlayerBox });
-	world.AddComponentToEntity<Physics>(player, { { 0.0f, 0.0f }, { 0.0f, 0.0f }, 100.0, true});
+	PrefabGen::Player();
 }
 
 void PlayingState::Exit() {
@@ -180,19 +146,15 @@ void PlayingState::UpdatePlayerState() {
 		AnimationData& playerAnimation = world.GetComponent<AnimationData>(playerEnt);
 
 		if (m_InputSystem->m_A_KeyPressed || m_InputSystem->m_D_KeyPressed) {
-			if (playerRenderable.texture != &m_Game->m_TextureManager.Load("Player_Sprint_Sprite.png")) {
-				playerRenderable.texture = &m_Game->m_TextureManager.Load("Player_Sprint_Sprite.png");
-				playerAnimation.spriteSheetDim = { 6,1 };
-				playerAnimation.totalFrames = 6;
-				playerAnimation.timeSinceLastFrame = 0.15f;
+			if (playerRenderable.texture != &m_Game->m_TextureManager.Load("Player_Sprint_Sprite")) {
+				playerRenderable.texture = &m_Game->m_TextureManager.Load("Player_Sprint_Sprite");
+				m_Game->m_TextureManager.SetAnimationData("Player_Sprint_Sprite", playerAnimation);
 			}
 		}
 		else {
-			if (playerRenderable.texture != &m_Game->m_TextureManager.Load("Player_Idle_Sprite.png")) {
-				playerRenderable.texture = &m_Game->m_TextureManager.Load("Player_Idle_Sprite.png");
-				playerAnimation.spriteSheetDim = { 4,1 };
-				playerAnimation.totalFrames = 4;
-				playerAnimation.timeSinceLastFrame = 0.15f;
+			if (playerRenderable.texture != &m_Game->m_TextureManager.Load("Player_Idle_Sprite")) {
+				playerRenderable.texture = &m_Game->m_TextureManager.Load("Player_Idle_Sprite");
+				m_Game->m_TextureManager.SetAnimationData("Player_Idle_Sprite", playerAnimation);
 			}
 		}
 	}
@@ -204,38 +166,20 @@ void PlayingState::ThrowShuriken(sf::Vector2f mousePos){
 	sf::FloatRect playerBox{ {world.GetComponent<Transform>(playerEnt).position},
 						 {world.GetComponent<Renderable>(playerEnt).size} };
 
-	Entity shuriken = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(shuriken, { playerBox.getCenter() });
-	std::function<void(Transform&)> transFunc = [](Transform& trans) {trans.rotation += 10; }; //Function to rotate shuriken
-	world.AddComponentToEntity<Renderable>(shuriken, { {30.0f, 30.0f}, true, &m_Game->m_TextureManager.Load("Shuriken.png") });
-	world.AddComponentToEntity<AnimationData>(shuriken, { { 3,1 }, 3, 0.03f });
+	Entity shuriken = PrefabGen::Shuriken();
+
+	world.GetComponent<Transform>(shuriken) = { playerBox.getCenter() };
 
 	sf::Vector2f shurikenDir = mousePos - playerBox.getCenter();
 	sf::Vector2f normalizedDir = shurikenDir / std::sqrt(shurikenDir.x * shurikenDir.x + shurikenDir.y * shurikenDir.y);
-	world.AddComponentToEntity<Physics>(shuriken, { {normalizedDir.x * 1000, normalizedDir.y * 1000 } });
-
-	sf::CircleShape shurikenHitbox{ 15.0f };
-	world.AddComponentToEntity<Collider>(shuriken, { {shurikenHitbox}, ColliderType::ProjectileBox });
-	
-	std::function<void(Entity ent)> onShurikenDestroyed = [this] (Entity shuriken){
-		World& world = m_Game->GetWorld();
-		Entity destroyEffect = world.CreateEntity();
-		world.AddComponentToEntity<Transform>(destroyEffect, world.GetComponent<Transform>(shuriken));
-		world.AddComponentToEntity<Renderable>(destroyEffect, { {30.0f, 30.0f}, true, &m_Game->m_TextureManager.Load("Shuriken_Break.png") } );
-		world.AddComponentToEntity<AnimationData>(destroyEffect, { {3,1}, 3, 0.05f });
-		world.AddComponentToEntity<Lifetime>(destroyEffect, { 0.15f ,0 });
-		};
-	world.AddComponentToEntity<Lifetime>(shuriken, { 0,3, onShurikenDestroyed });
+	world.GetComponent<Physics>(shuriken) = { {normalizedDir.x * 1000, normalizedDir.y * 1000 } };
 
 	Renderable& playerRenderable = world.GetComponent<Renderable>(playerEnt);
 	AnimationData& playerAnimation = world.GetComponent<AnimationData>(playerEnt);
 
-	if (playerRenderable.texture != &m_Game->m_TextureManager.Load("Player_Throw_Sprite.png")) {
-		playerRenderable.texture = &m_Game->m_TextureManager.Load("Player_Throw_Sprite.png");
-		playerAnimation.spriteSheetDim = { 2,1 };
-		playerAnimation.totalFrames = 2;
-		playerAnimation.timeSinceLastFrame = 0.15f;
-	}
+	playerRenderable.texture = &m_Game->m_TextureManager.Load("Player_Throw_Sprite");
+	m_Game->m_TextureManager.SetAnimationData("Player_Throw_Sprite", playerAnimation);
+
 	//Refresh cooldown
 	shurikenCD += 0.30f;
 	m_InputSystem->SetKeyboardDisabled(true);
@@ -251,28 +195,24 @@ void PlayingState::SpawnTarget() {
 	float spawnX = static_cast<float>(disX(gen));
 	float spawnY = static_cast<float>(disY(gen));
 
-	Entity target = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(target, { {spawnX, spawnY} });
+	Entity target = PrefabGen::Target();
+	world.GetComponent<Transform>(target) = { {spawnX, spawnY} };
 
-	world.AddComponentToEntity<Renderable>(target, { { 60, 100 }, true, &m_Game->m_TextureManager.Load("Strawman_Target.png") });
-	sf::FloatRect targetHitbox{ {spawnX, spawnY},{ 60, 100 } };
-	world.AddComponentToEntity<Collider>(target, { { targetHitbox }, ColliderType::TargetBox });
-	world.AddComponentToEntity<Physics>(target, { { 0.0f, 0.0f }, { 0.0f, 0.0f }, 100.0, true });
 	std::function<void(Entity ent)> onTargetDestroyed = [this](Entity target) {
 		World& world = m_Game->GetWorld();
 		Entity destroyEffect = world.CreateEntity();
 		world.AddComponentToEntity<Transform>(destroyEffect, world.GetComponent<Transform>(target));
 		sf::Vector2f& targetSize = world.GetComponent<Renderable>(target).size;
-		world.AddComponentToEntity<Renderable>(destroyEffect, { {targetSize.x, targetSize.y}, true, &m_Game->m_TextureManager.Load("Explosion.png") });
+		world.AddComponentToEntity<Renderable>(destroyEffect, { {targetSize.x, targetSize.y}, RenderLayer::GameObject1, true, &m_Game->m_TextureManager.Load("Explosion") });
 		world.AddComponentToEntity<AnimationData>(destroyEffect, { {5,2}, 10, 0.05f });
 		world.AddComponentToEntity<Lifetime>(destroyEffect, { 0.45f ,0 });
 		SpawnTarget();
 		};
-	world.AddComponentToEntity<Lifetime>(target, { 0,1, onTargetDestroyed });
+	world.GetComponent<Lifetime>(target).OnDestroyedFunction = onTargetDestroyed;
 
 	Entity spawnSmoke = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(spawnSmoke, { {spawnX, spawnY} });
-	world.AddComponentToEntity<Renderable>(spawnSmoke, { { 60, 100 }, true, &m_Game->m_TextureManager.Load("Smoke.png") });
+	world.AddComponentToEntity<Renderable>(spawnSmoke, { { 60, 100 }, RenderLayer::GameObject1, true, &m_Game->m_TextureManager.Load("Smoke") });
 	world.AddComponentToEntity<AnimationData>(spawnSmoke, { {6,1}, 6, 0.1f });
 	world.AddComponentToEntity<Lifetime>(spawnSmoke, { 0.5f,0 });
 }

@@ -11,5 +11,5 @@ public:
 
 private:
 	int m_EntityVectorSize = 0;
-	int m_LastElement = 0;
+	int m_LastElement;
 };

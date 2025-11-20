@@ -1,6 +1,6 @@
 #pragma once
 #include "Types.h"
-#include <set>
+#include <vector>
 #include <print>
 
 class World; //Forward declaration to remove circular dependency
@@ -11,14 +11,15 @@ public:
 	virtual ~ISystem() = default;
 
 	void AddEntity(Entity ent) {
-		m_Entities.insert(ent);
+		if (std::find(m_Entities.begin(), m_Entities.end(), ent) == m_Entities.end())
+			m_Entities.emplace_back(ent);
 	}
 
 	void RemoveEntity(Entity ent) {
-		m_Entities.erase(ent);
+		std::erase(m_Entities, ent);
 	}
 
-	virtual std::set<Entity> ReturnEntities() {
+	virtual std::vector<Entity> ReturnEntities() {
 		return m_Entities;
 	}
 
@@ -27,6 +28,6 @@ public:
 		std::println("[{} System] -> World Set!", typeid(*this).name());
 	}
 protected:
-	std::set<Entity> m_Entities;
+	std::vector<Entity> m_Entities;
 	World* m_World = nullptr;
 };

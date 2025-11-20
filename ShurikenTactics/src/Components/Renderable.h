@@ -3,24 +3,26 @@
 #include <SFML/System/Vector2.hpp>
 #include<SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Texture.hpp>
+#include "Transform.h"
 
 //const float DEFAULT_SIZE = 30.0f;
 //sf::Color DEFAULT_COLOR{ sf::Color::White };
 
 enum class RenderLayer {
 	Background,
-	UI,
 	GameObject2,
 	Player,
-	GameObject1
+	GameObject1,
+	UI
 };
 
 struct Renderable {
 	sf::Vector2f size{ 10.0f, 10.0f };
+	RenderLayer layer{0};
 	bool visible{ true };
 	sf::Texture* texture = nullptr;
 	bool flipX = false;
-	std::function<void(sf::Transform&)> transformFunction{}; //For transform related display mods (rotation, shaking, etc...)
+	std::function<void(Transform&)> transformFunction{}; //For transform related display mods (rotation, shaking, etc...)
 };
 
 struct AnimationData {

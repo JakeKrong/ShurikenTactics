@@ -155,11 +155,12 @@ void ColliderSystem::RegisterHandlers() {
 			float distTop = std::abs(closestY - obstacleAABB.top());
 			float distBottom = std::abs(closestY - obstacleAABB.bottom());
 
-			std::cout << std::abs(std::min(distLeft, distRight) - std::min(distTop, distBottom)) << "\n";
+			//std::cout << std::abs(std::min(distLeft, distRight) - std::min(distTop, distBottom)) << "\n";
 
 			//Check edge case of corners hit
-			if (std::abs(std::min(distLeft, distRight) - std::min(distTop, distBottom)) < 0.3f) {	//0.3f: Arbitrary number cap to determine corner hit (difference of top/bottom & right/left obstacle intersection, can be adjusted)
-				float proSpeed = std::sqrt(proVelocity.x * proVelocity.x + proVelocity.y * proVelocity.y);
+			if (std::abs(std::min(distLeft, distRight) - std::min(distTop, distBottom)) < 0.2f) {	//0.2f: Arbitrary number cap to determine corner hit (difference of top/bottom & right/left obstacle intersection, can be adjusted)
+				
+				float proSpeed = proVelocity.length();
 				int deflectionDegree;
 
 				if (closestY == obstacleAABB.bottom()) {
@@ -171,8 +172,10 @@ void ColliderSystem::RegisterHandlers() {
 					else deflectionDegree = 315;
 				}
 
-				float radian = deflectionDegree * PI / 180.0f;
-				proVelocity = sf::Vector2f{ std::cos(radian), std::sin(radian) } *proSpeed;
+				proVelocity = sf::Vector2f(proSpeed, sf::Angle( sf::degrees(deflectionDegree) ));
+				//float radian = deflectionDegree * PI / 180.0f;
+				//proVelocity = sf::Vector2f{ std::cos(radian), std::sin(radian) } *proSpeed;
+				
 
 				//std::cout << "Corner Collision. " << std::min(distLeft, distRight) << " | " << std::min(distTop, distBottom) << " . " << closestX << "|" << closestY << " . " << proVelocity.x << "|" << proVelocity.y << std::endl;
 				m_World->GetComponent<Lifetime>(b).durability -= 1;
