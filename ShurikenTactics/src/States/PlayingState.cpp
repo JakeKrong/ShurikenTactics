@@ -2,10 +2,13 @@
 #include "Game.h"
 #include "Components.h"
 #include "Prefabs.h"
+#include "TrajectoryMath.h"
 
 #include <functional>
 #include <random>
 #include <iostream>
+
+#include <SFML/Graphics/RectangleShape.hpp>
 
 PlayingState::PlayingState(Game* game) :
 	m_Game(game) {
@@ -93,6 +96,24 @@ void PlayingState::Enter() {
 
 	//Player
 	PrefabGen::Player();
+
+	//Test enemy
+	Entity enemy = world.CreateEntity();
+	world.AddComponentToEntity<Transform>(enemy, { {400.0f,200.0f} });
+	world.AddComponentToEntity<Renderable>(enemy, { { 100, 130 }, RenderLayer::GameObject1, true, &m_Game->m_TextureManager.Load("Samurai_Idle_Spirte") });
+	world.AddComponentToEntity<AnimationData>(enemy, { {6,1}, 6, 0.15f });
+	Physics enemyPhy;
+	enemyPhy.affectedByGravity = true;
+	enemyPhy.mass = 10;
+	world.AddComponentToEntity<Physics>(enemy, enemyPhy);
+
+	Collider collider;
+	sf::FloatRect enemyHitbox;
+	enemyHitbox.position = { 400.0f,200.0f };
+	enemyHitbox.size = { 100, 130 };
+	collider.entityColliders.push_back(enemyHitbox);
+	collider.type = ColliderType::PlayerBox;
+	world.AddComponentToEntity<Collider>(enemy, collider);
 }
 
 void PlayingState::Exit() {
@@ -108,13 +129,14 @@ void PlayingState::Exit() {
 }
 
 void PlayingState::Update(sf::RenderWindow& renderWindow, const float& deltaTime) {
+	
 	//Systems Update
-	m_LifetimeSystem->Update(deltaTime);
+	m_InputSystem->Update(renderWindow, deltaTime);
 	m_PhysicsSystem->Update(deltaTime);
+	m_LifetimeSystem->Update(deltaTime);	
 	m_ColliderSystem->Update();
-	m_InputSystem->Update(renderWindow);
-
-	UpdatePlayerState();
+	
+	UpdatePlayerState(renderWindow);
 
 	//Update variables
 	if (shurikenCD > 0) {
@@ -136,16 +158,61 @@ void PlayingState::HandleEvents(const sf::Event& event) {
 	}
 }
 
-void PlayingState::UpdatePlayerState() {
-	if (m_InputSystem->WasLeftClicked() && shurikenCD <= 0.0f) 
-		ThrowShuriken(m_Game->GetWindow().mapPixelToCoords(m_InputSystem->GetMousePosition()));
-	else if(shurikenCD <= 0) {
-		Entity playerEnt = *m_InputSystem->ReturnEntities().begin();
-		World& world = m_Game->GetWorld();
-		Renderable& playerRenderable = world.GetComponent<Renderable>(playerEnt);
-		AnimationData& playerAnimation = world.GetComponent<AnimationData>(playerEnt);
+void PlayingState::UpdatePlayerState(sf::RenderWindow& renderWindow) {
+	PlayerInputIntent input = m_InputSystem->GetIntent();
 
-		if (m_InputSystem->m_A_KeyPressed || m_InputSystem->m_D_KeyPressed) {
+	Entity playerEnt = *m_InputSystem->ReturnEntities().begin();
+	World& world = m_Game->GetWorld();
+	Transform& playerTransform = world.GetComponent<Transform>(playerEnt);
+	Renderable& playerRenderable = world.GetComponent<Renderable>(playerEnt);
+	AnimationData& playerAnimation = world.GetComponent<AnimationData>(playerEnt);
+
+	if (input.projectileReleased && shurikenCD <= 0.0f)
+		ThrowShuriken(renderWindow, m_Game->GetWindow().mapPixelToCoords(input.mousePos));
+	else if (input.isAiming) {
+		if (playerRenderable.texture != &m_Game->m_TextureManager.Load("Player_Aim"));
+		{
+			playerRenderable.texture = &m_Game->m_TextureManager.Load("Player_Aim");
+			AnimationData animData;
+			playerAnimation = animData;
+		}
+		sf::FloatRect playerBox{ {world.GetComponent<Transform>(playerEnt).position},
+					 {world.GetComponent<Renderable>(playerEnt).size} };
+		sf::Vector2f shurikenDir = (m_Game->GetWindow().mapPixelToCoords(input.mousePos) - playerBox.getCenter()).normalized();
+
+		sf::Vector2f trajectoryEnd;
+		float shurikenRadius = 15.f; //Hardcode for now
+		for (auto& [start, end] : ComputeTrajectory(world, playerBox.getCenter(), shurikenDir, shurikenRadius, 2)) {
+			Entity assistLine = world.CreateEntity();
+
+			Transform trans;
+			trans.position = start;
+			trans.rotation = (end - start).angle().asDegrees();
+			world.AddComponentToEntity<Transform>(assistLine, trans);
+
+			Renderable render;
+			render.size = {(end - start).length() , 2 };
+
+			render.texture = &m_Game->GetTextureManager().Load("Trajectory_Preview");
+			world.AddComponentToEntity<Renderable>(assistLine, render);
+
+			world.AddComponentToEntity<Lifetime>(assistLine, {0.01f}); //Lasts 1 frame only
+			trajectoryEnd = end;
+		}
+
+		Entity preview = world.CreateEntity();
+		// Adjust shuriken preview to be centered at line's end
+		world.AddComponentToEntity<Transform>(preview, { { trajectoryEnd.x - shurikenRadius, trajectoryEnd.y - shurikenRadius } });
+		world.AddComponentToEntity<Renderable>(preview, { {30,30}, RenderLayer::UI, true, &m_Game->GetTextureManager().Load("Shuriken_Preview") });
+		world.AddComponentToEntity<Lifetime>(preview, { 0.01f });
+
+	}
+	else if(shurikenCD <= 0) {
+
+		//if (input.jump) {
+		//	//Do jump
+		//}
+		if (input.walkLeft || input.walkRight) {
 			if (playerRenderable.texture != &m_Game->m_TextureManager.Load("Player_Sprint_Sprite")) {
 				playerRenderable.texture = &m_Game->m_TextureManager.Load("Player_Sprint_Sprite");
 				m_Game->m_TextureManager.SetAnimationData("Player_Sprint_Sprite", playerAnimation);
@@ -160,7 +227,7 @@ void PlayingState::UpdatePlayerState() {
 	}
 }
 
-void PlayingState::ThrowShuriken(sf::Vector2f mousePos){
+void PlayingState::ThrowShuriken(sf::RenderWindow& renderWindow, sf::Vector2f mousePos){
 	Entity playerEnt = *m_InputSystem->ReturnEntities().begin();
 	World& world = m_Game->GetWorld();
 	sf::FloatRect playerBox{ {world.GetComponent<Transform>(playerEnt).position},
@@ -168,11 +235,13 @@ void PlayingState::ThrowShuriken(sf::Vector2f mousePos){
 
 	Entity shuriken = PrefabGen::Shuriken();
 
-	world.GetComponent<Transform>(shuriken) = { playerBox.getCenter() };
+	sf::CircleShape shurikenCollider = std::get<sf::CircleShape>(world.GetComponent<Collider>(shuriken).entityColliders[0]);
+	world.GetComponent<Transform>(shuriken) = { playerBox.getCenter() - sf::Vector2f{shurikenCollider.getRadius(), shurikenCollider.getRadius()} };
 
 	sf::Vector2f shurikenDir = mousePos - playerBox.getCenter();
-	sf::Vector2f normalizedDir = shurikenDir / std::sqrt(shurikenDir.x * shurikenDir.x + shurikenDir.y * shurikenDir.y);
-	world.GetComponent<Physics>(shuriken) = { {normalizedDir.x * 1000, normalizedDir.y * 1000 } };
+	sf::Vector2f normalizedDir = shurikenDir.normalized();
+
+	world.GetComponent<Physics>(shuriken) = { {normalizedDir.x * 800, normalizedDir.y * 800 } };
 
 	Renderable& playerRenderable = world.GetComponent<Renderable>(playerEnt);
 	AnimationData& playerAnimation = world.GetComponent<AnimationData>(playerEnt);

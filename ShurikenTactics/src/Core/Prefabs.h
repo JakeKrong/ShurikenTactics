@@ -4,12 +4,14 @@
 #include <cassert>
 
 namespace PrefabGen {
+	//Can consider using on World and TextureManager instead of Game later on
 	static Game* game = nullptr;
 
 	inline void Init(Game* g) {
 		game = g;
 	}
 
+	//If certain prefab parameters increase by a lot, can use struct as params instead to prevent bloat
 	inline Entity Wall(sf::Vector2f position, sf::Vector2f size) {
 		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
 		World& world = game->GetWorld();
@@ -119,6 +121,7 @@ namespace PrefabGen {
 		animationData.spriteSheetDim = { 3,1 };
 		animationData.totalFrames = 3;
 		animationData.frameTime = 0.03f;
+		animationData.timeSinceLastFrame =	3.f;
 		world.AddComponentToEntity<AnimationData>(shuriken, animationData);
 
 		Collider collider;

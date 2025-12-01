@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "Types.h"
 
 //Test
 #include <iostream>
@@ -6,7 +7,8 @@
 Game::Game() :
 	m_Window(sf::RenderWindow(sf::VideoMode({1280,720}), "Shuriken Tactics", sf::Style::Default))
 {
-	m_Window.setFramerateLimit(60);
+	m_Window.setFramerateLimit(TargetFixedUpdateFrequency);
+	m_Window.setVerticalSyncEnabled(false);
 }
 
 void Game::Run() { 
@@ -30,7 +32,10 @@ void Game::Run() {
 				std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 			}
 		}
+		//Can consider de-coupling .Update() frequency to follow current loop frequency 
+		// (Can set expected updates per frame, and based on deltaTime passed, run .Update() function x times)
 		m_StateManager.Update(deltaTime, m_Window);
+
 		m_StateManager.Render(m_Window, deltaTime);
 	}
 }

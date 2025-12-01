@@ -1,5 +1,7 @@
 #pragma once
 #include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Graphics/RectangleShape.hpp>
+#include <vector>
 #include "Renderable.h"
 #include "ISystem.h"
 
@@ -12,4 +14,5 @@ public:
 private:
 	int m_EntityVectorSize = 0;
 	int m_LastElement;
+	//std::vector<sf::RectangleShape> m_AddRenderElements{};
 };

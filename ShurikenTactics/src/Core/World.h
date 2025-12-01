@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 #include "Types.h"
 #include "EntityManager.h"
@@ -50,6 +51,11 @@ public:
 	template<typename T>
 	T& GetComponent(Entity ent) {
 		return m_ComponentManager->GetComponentData<T>(ent);
+	}
+
+	template <typename T>
+	std::vector<std::pair<Entity, T*>> GetAllComponentsOfType() {
+		return m_ComponentManager->GetComponentArray<T>()->GetAllComponents();
 	}
 
 	template<typename T>

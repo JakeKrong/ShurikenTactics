@@ -18,8 +18,8 @@ public:
 	void HandleEvents(const sf::Event& event) override;
 
 	// Gameplay Functions
-	void UpdatePlayerState();
-	void ThrowShuriken(sf::Vector2f);
+	void UpdatePlayerState(sf::RenderWindow&);
+	void ThrowShuriken(sf::RenderWindow&, sf::Vector2f);
 	void SpawnTarget();
 
 private:

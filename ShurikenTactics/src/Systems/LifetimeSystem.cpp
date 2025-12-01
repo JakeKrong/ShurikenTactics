@@ -6,7 +6,7 @@
 #include <iostream>
 
 void LifetimeSystem::Update(const float& deltaTime) {
-	if (!m_World);
+	if (!m_World) return;
 
 	for (Entity ent : m_Entities) {
 		Lifetime& lifeComp = m_World->GetComponent<Lifetime>(ent);
@@ -16,6 +16,7 @@ void LifetimeSystem::Update(const float& deltaTime) {
 		}
 	}
 
+	//Consider differing entity destruction to world rather than system
 	for(Entity ent : m_EntitiesToDestroy) {
 		Lifetime& lifetime = m_World->GetComponent<Lifetime>(ent);
 		if (lifetime.OnDestroyedFunction) {
@@ -27,7 +28,7 @@ void LifetimeSystem::Update(const float& deltaTime) {
 }
 
 void LifetimeSystem::SetDurability(Entity ent, const int durability) {
-	if (!m_World);
+	if (!m_World) return;
 	Lifetime& entLifetime = m_World->GetComponent<Lifetime>(ent);
 	entLifetime.durability -= durability;
 

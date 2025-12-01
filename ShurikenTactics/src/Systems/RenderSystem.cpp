@@ -1,10 +1,9 @@
-#include <SFML/Graphics/RenderWindow.hpp>
-#include <SFML/Graphics/Shape.hpp>
-#include <SFML/Graphics/RectangleShape.hpp>
-
 #include "RenderSystem.h"
 #include  "World.h"
 #include "Transform.h"
+
+#define COLLIDER_RENDER_DEBUG_FLAG 0
+#include "Collider.h"
 
 void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime) {
 	if (!m_World) return;
@@ -15,7 +14,7 @@ void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime
 		m_EntityVectorSize = m_Entities.size();
 
 		std::sort(m_Entities.begin(), m_Entities.end(),
-			[this](const Entity& a, const Entity& b) {
+			[&](const Entity& a, const Entity& b) {
 				const Renderable& renderA = m_World->GetComponent<Renderable>(a);
 				const Renderable& renderB = m_World->GetComponent<Renderable>(b);
 				return renderA.layer < renderB.layer;
@@ -41,8 +40,10 @@ void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime
 			//Check if it's animated
 			if (m_World->HasComponent<AnimationData>(systemEnt)) {
 				AnimationData& animationComp = m_World->GetComponent<AnimationData>(systemEnt);
-				SetAnimationFrame(renderComp, animationComp, deltaTime);
-				renderable.setTextureRect(animationComp.activeSprite);
+				if (animationComp.totalFrames > 1) {
+					SetAnimationFrame(renderComp, animationComp, deltaTime);
+					renderable.setTextureRect(animationComp.activeSprite);
+				}
 			}
 		}
 		//Set default shape and colour if no texture is found
@@ -60,6 +61,42 @@ void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime
 
 		renderWindow.draw(renderable);
 	}
+
+	m_AddRenderElements.clear();
+
+//Debug tool to outline collider shapes
+#if COLLIDER_RENDER_DEBUG_FLAG
+	//This function works for entities with Renderable component only, so can attach non-visible Renderable for testing
+	for (const Entity& systemEnt : m_Entities) {
+		if (m_World->HasComponent<Collider>(systemEnt)) {
+			const Collider& entCollider = m_World->GetComponent<Collider>(systemEnt);
+			for (auto& collider : entCollider.entityColliders) {
+				std::visit([&](auto&& shape) {
+					using T = std::decay_t<decltype(shape)>;
+
+					if (std::is_same_v<T, sf::FloatRect>) {
+						sf::FloatRect rectCol = std::get<sf::FloatRect>(collider);
+						sf::RectangleShape renderable;
+						renderable.setPosition(rectCol.position);
+						renderable.setSize(rectCol.size);
+						renderable.setFillColor(sf::Color::Transparent);
+						renderable.setOutlineColor(sf::Color::Green);
+						renderable.setOutlineThickness(1);
+						renderWindow.draw(renderable);
+					}
+					else {
+						sf::CircleShape circleCol = std::get<sf::CircleShape>(collider);
+						circleCol.setFillColor(sf::Color::Transparent);
+						circleCol.setOutlineColor(sf::Color::Red);
+						circleCol.setOutlineThickness(1);
+						renderWindow.draw(circleCol);
+					}
+					}, collider);
+			}
+		}
+	}
+#endif
+
 	renderWindow.display();
 }
 

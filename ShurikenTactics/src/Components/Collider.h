@@ -11,7 +11,8 @@ enum class ColliderType : std::uint16_t {
 	PlayerBox,
 	ObstacleBox,
 	ProjectileBox,
-	TargetBox
+	TargetBox,
+	EnemyBox
 };
 
 struct Collider {

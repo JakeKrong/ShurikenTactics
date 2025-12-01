@@ -1,5 +1,6 @@
 #include "ColliderSystem.h"
 #include "World.h"
+#include "Types.h"
 
 #include "Physics.h"
 #include "Transform.h"
@@ -155,7 +156,7 @@ void ColliderSystem::RegisterHandlers() {
 			float distTop = std::abs(closestY - obstacleAABB.top());
 			float distBottom = std::abs(closestY - obstacleAABB.bottom());
 
-			//std::cout << std::abs(std::min(distLeft, distRight) - std::min(distTop, distBottom)) << "\n";
+			//std::cout << closestX << " | " << closestY << std::endl;
 
 			//Check edge case of corners hit
 			if (std::abs(std::min(distLeft, distRight) - std::min(distTop, distBottom)) < 0.2f) {	//0.2f: Arbitrary number cap to determine corner hit (difference of top/bottom & right/left obstacle intersection, can be adjusted)
@@ -201,9 +202,7 @@ void ColliderSystem::RegisterHandlers() {
 					m_World->GetComponent<Lifetime>(b).durability -= 1;
 					m_World->GetComponent<Collider>(b).frameBuffer = 2;
 			}
-			// Likely corner collision
 			//else {
-			//	std::cout << "Corner Collision. " << std::min(distLeft, distRight) << " | " << std::min(distTop, distBottom) << " . " << closestX << "|" << closestY << " . " << proVelocity.x << "|" << proVelocity.y << std::endl;
 			//	sf::Vector2f collisionNormal = circleCenter - sf::Vector2f{ closestX, closestY };
 			//	float lengthSquared = collisionNormal.x * collisionNormal.x + collisionNormal.y * collisionNormal.y;
 			//	if (lengthSquared == 0) return;

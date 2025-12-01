@@ -7,17 +7,6 @@
 
 using CollisionKey = std::uint16_t;
 
-struct AABB {
-	sf::Vector2f pos;
-	sf::Vector2f size;
-
-	float left()   const { return pos.x; }
-	float right()  const { return pos.x + size.x; }
-	float top()    const { return pos.y; }
-	float bottom() const { return pos.y + size.y; }
-};
-
-
 class ColliderSystem : public ISystem{
 public:
 	ColliderSystem();
