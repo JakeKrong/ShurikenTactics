@@ -62,8 +62,6 @@ void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime
 		renderWindow.draw(renderable);
 	}
 
-	m_AddRenderElements.clear();
-
 //Debug tool to outline collider shapes
 #if COLLIDER_RENDER_DEBUG_FLAG
 	//This function works for entities with Renderable component only, so can attach non-visible Renderable for testing
