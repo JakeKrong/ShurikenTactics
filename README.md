@@ -1,6 +1,7 @@
 # Shuriken Tactics #
 
-![Shuriken Tactics Proof-of-Concept](https://github.com/user-attachments/assets/2c71fd6c-33c9-4030-93ec-78bb268d6191)
+![Shuriken_Tactics_Preview_2-12_comp](https://github.com/user-attachments/assets/ed3f5028-6479-4bd9-8bba-129a96c6d390)
+
 
 
 ************
