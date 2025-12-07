@@ -1,6 +1,6 @@
 # Shuriken Tactics #
 
-![Shuriken_Tactics_Preview_2-12_comp](https://github.com/user-attachments/assets/ed3f5028-6479-4bd9-8bba-129a96c6d390)
+![Shuriken_Tactics_Preview_7-12-resized](https://github.com/user-attachments/assets/682f9e14-1c7d-4d44-a75e-92ab24ecd19a)
 
 
 
@@ -17,12 +17,11 @@ The game is inspired by aiming & trajectory-focused gameplay you play as a ninja
 ---
 
 ## Core Concept (To be implemented)
-Each turn, the player can:
-- Move or jump within a limited range.
+- Move, jump, or drop to traverse around the platforms to position strategically.
 - Throw a number of **shurikens** that **ricochet** off walls and obstacles.
-- Plan attacks strategically, as **enemies move toward the player** at the end of each turn. (Work-in-progress)
+- Plan attacks strategically, as **enemies utilises their variety of movesets** to fight back the player.
 
-If an enemy reaches the player, the game is over.
+If an enemy damages the player, the game is over.
 
 The goal is to defeat the enemies by utilising the interplay between **trajectory**, **bouncing angles**, and **positioning**.
 
