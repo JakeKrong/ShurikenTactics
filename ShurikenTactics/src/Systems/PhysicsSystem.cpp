@@ -22,7 +22,7 @@ void PhysicsSystem::Update(const float& deltaTime) {
 
 
 			if (physicsComp.affectedByGravity && !physicsComp.isGrounded) {
-				physicsComp.acceleration.y += 980.f; //GRAVITY
+				physicsComp.acceleration.y += 98.f * physicsComp.mass; //GRAVITY
 			}
 
 			// Apply acceleration to velocity

@@ -16,3 +16,5 @@ std::vector<TrajectorySegment> ComputeTrajectory(
     float radius,         // projectile radius (for circle collision)
     int maxBounces        // number of predicted ricochets
 );
+
+bool HasLineOfSight(World& world, const sf::Vector2f& origin, const sf::Vector2f& target);

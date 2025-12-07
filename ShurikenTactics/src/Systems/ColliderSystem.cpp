@@ -2,10 +2,7 @@
 #include "World.h"
 #include "Types.h"
 
-#include "Physics.h"
-#include "Transform.h"
-#include "Renderable.h"
-#include "Lifetime.h"
+#include "Components.h"
 
 #include <iostream>
 #include <algorithm>
@@ -19,34 +16,35 @@ ColliderSystem::ColliderSystem() {
 void ColliderSystem::Update() {
 	if (!m_World) return;
 
+	//Update collider position to match with transform
 	for (Entity entity : m_Entities) {
+
 		auto& transform = m_World->GetComponent<Transform>(entity);
 		auto& collider = m_World->GetComponent<Collider>(entity);
 
 		if (collider.frameBuffer > 0) collider.frameBuffer -= 1; //Decrement collision detection buffer
 
-		for (auto& shapeVariant : collider.entityColliders) {
+		collider.canPhaseThroughPlatform = true;
+
+		for (auto& [shapeVariant, offset] : collider.entityColliders) {
 			std::visit([&](auto& shape) {
 				using ShapeType = std::decay_t<decltype(shape)>;
 
 				if constexpr (std::is_same_v<ShapeType, sf::FloatRect>) {
-					shape = sf::FloatRect({ transform.position.x,
-						transform.position.y },
+					shape = sf::FloatRect({ transform.position.x + offset.x,
+						transform.position.y + offset.y },
 						{ shape.size.x, shape.size.y });
 				}
 				else if constexpr (std::is_same_v<ShapeType, sf::CircleShape>) {
-					shape.setPosition(transform.position);				}
+					shape.setPosition({ transform.position.x + offset.x , transform.position.y + offset.y }); }
 				}, shapeVariant);
 		}
 	}
 
-	//Initialize vector of m_Entities set to iterate over (check if can declare m_Entities as vector later)
-	std::vector<Entity> entityList(m_Entities.begin(), m_Entities.end());
-
-	for (int i = 0; i < entityList.size(); i++) {
-		for (int j = i + 1; j < entityList.size(); j++) {
-			const Entity& entA = entityList[i];
-			const Entity& entB = entityList[j];
+	for (int i = 0; i < m_Entities.size(); i++) {
+		for (int j = i + 1; j < m_Entities.size(); j++) {
+			const Entity& entA = m_Entities[i];
+			const Entity& entB = m_Entities[j];
 
 			try {
 				if (CheckCollision(entA, entB)) {
@@ -76,8 +74,8 @@ bool ColliderSystem::CheckCollision(Entity entA, Entity entB) {
 
 	//If collision pairing not found, return false
 	if (m_CollisionHandlers.find(GenerateCollisionKey(colliderA.type, colliderB.type)) == m_CollisionHandlers.end()) return false;
-	for (const ColliderShape& colA : colliderA.entityColliders) {
-		for (const ColliderShape& colB : colliderB.entityColliders) {
+	for (const auto& [colA, _] : colliderA.entityColliders) {
+		for (const auto& [colB, _] : colliderB.entityColliders) {
 			bool collided = std::visit([&](auto&& a, auto&& b)->bool {
 				using A = std::decay_t<decltype(a)>;
 				using B = std::decay_t<decltype(b)>;
@@ -135,6 +133,116 @@ CollisionKey ColliderSystem::GenerateCollisionKey(ColliderType a, ColliderType b
 
 //Set up collision logic for relevant collider type pairings
 void ColliderSystem::RegisterHandlers() {
+	// === Player === //
+	//Player -> Obstacle Collision Logic
+	m_CollisionHandlers[GenerateCollisionKey(ColliderType::PlayerBox, ColliderType::ObstacleBox)] = [this](Entity plyr, Entity obs)
+		{
+			auto& obstacleTrans = m_World->GetComponent<Transform>(obs);
+			auto& playerTrans = m_World->GetComponent<Transform>(plyr);
+
+			auto& obstacleRenderable = m_World->GetComponent<Renderable>(obs);
+			auto& playerRenderable = m_World->GetComponent<Renderable>(plyr);
+
+			auto& playerPhysics = m_World->GetComponent<Physics>(plyr);
+
+			AABB obstacleAABB{ obstacleTrans.position, obstacleRenderable.size };
+			AABB playerAABB{ playerTrans.position,  playerRenderable.size };
+
+			AABB overlap;
+			if (!AABBIntersect(obstacleAABB, playerAABB, &overlap)) return;
+
+			// Determine the axis to resolve on.
+			bool resolveX = overlap.size.x < overlap.size.y;
+
+			// Edge case fix: When moving up (jumping) and detect a y-collision, change to horizontal instead
+			if (!resolveX) {
+				bool isPlayerAbove = playerAABB.top() < obstacleAABB.top();
+				bool isJumping = playerPhysics.velocity.y < 0.f;
+
+				if (isPlayerAbove && isJumping) {
+					resolveX = true; // Force horizontal slide
+				}
+			}
+
+			if (resolveX) {
+				// --- Horizontal Collision ---
+				if (playerAABB.left() < obstacleAABB.left()) {
+					playerTrans.position.x -= overlap.size.x; // Push Left
+				}
+				else {
+					playerTrans.position.x += overlap.size.x; // Push Right
+				}
+				playerPhysics.velocity.x = 0.f;
+			}
+			else {
+				// --- Vertical Collision ---
+				if (playerAABB.top() < obstacleAABB.top()) {
+					// Player hit obstacle from above
+					playerTrans.position.y -= overlap.size.y - .1f;
+					playerPhysics.isGrounded = true;
+					playerPhysics.velocity.y = 0.f;
+					m_World->GetComponent<Collider>(plyr).canPhaseThroughPlatform = false;
+				}
+				else {
+					// Player hit obstacle from below
+					playerTrans.position.y += overlap.size.y;
+
+					// Only stop velocity if we were actually moving up
+					if (playerPhysics.velocity.y < 0.f) {
+						playerPhysics.velocity.y = 0.f;
+					}
+				}
+			}
+		};
+
+	//Player -> Platform Collision Logic
+	m_CollisionHandlers[GenerateCollisionKey(ColliderType::PlayerBox, ColliderType::PlatformBox)] = [this](Entity plyr, Entity plat)
+		{
+			auto& obstacleTrans = m_World->GetComponent<Transform>(plat);
+			auto& playerTrans = m_World->GetComponent<Transform>(plyr);
+
+			auto& obstacleRenderable = m_World->GetComponent<Renderable>(plat);
+			auto& playerRenderable = m_World->GetComponent<Renderable>(plyr);
+
+			auto& playerPhysics = m_World->GetComponent<Physics>(plyr);
+			auto& playerCollider = m_World->GetComponent<Collider>(plyr);
+
+			AABB obstacleAABB{ obstacleTrans.position, obstacleRenderable.size };
+			AABB playerAABB{ playerTrans.position,  playerRenderable.size };
+
+			AABB overlap;
+			if (!AABBIntersect(obstacleAABB, playerAABB, &overlap)) return;
+
+			// --- Vertical Collision ---
+			if (playerAABB.top() < obstacleAABB.top() && std::abs(obstacleAABB.top() - playerAABB.bottom()) <= 5 
+				&& playerPhysics.velocity.y >= 0 && !playerCollider.phaseThroughPlatform) {
+				// Player hit obstacle from above
+				playerTrans.position.y -= overlap.size.y - .1f;
+				playerPhysics.isGrounded = true;
+				playerPhysics.velocity.y = 0.f;
+			}
+		};
+
+	//Player -> Platform Collision Logic
+	m_CollisionHandlers[GenerateCollisionKey(ColliderType::PlayerBox, ColliderType::ProjectileBox)] = [this](Entity a, Entity b)
+		{
+			if (m_World->GetComponent<Collider>(b).isDanger) {
+				m_World->GetComponent<Player>(a).health = 0;
+				m_World->GetComponent<Lifetime>(b).durability = 0;
+			}
+		};
+
+	//Player -> Enemy Collision Logic
+	m_CollisionHandlers[GenerateCollisionKey(ColliderType::PlayerBox, ColliderType::EnemyBox)] = [this](Entity a, Entity b)
+		{
+			Enemy& enemyComp = m_World->GetComponent<Enemy>(b);
+			enemyComp.inPlayerKillRange = true;
+			if (enemyComp.isLethal) {
+				m_World->GetComponent<Player>(a).health = 0;
+			}
+		};
+
+	// === Obstacle === //
 	//Obstacle -> Projectile Collision Logic
 	m_CollisionHandlers[GenerateCollisionKey(ColliderType::ObstacleBox, ColliderType::ProjectileBox)] = [this](Entity a, Entity b)
 		{
@@ -143,7 +251,7 @@ void ColliderSystem::RegisterHandlers() {
 			AABB obstacleAABB{ obstacleCollider.position, obstacleCollider.size };
 
 			Transform projectileTrans = m_World->GetComponent<Transform>(b);
-			sf::CircleShape projectileCollider = std::get<sf::CircleShape>(m_World->GetComponent<Collider>(b).entityColliders[0]);
+			sf::CircleShape projectileCollider = std::get<sf::CircleShape>(m_World->GetComponent<Collider>(b).entityColliders[0].first);
 
 			sf::Vector2f circleCenter = projectileCollider.getPosition() + sf::Vector2f(projectileCollider.getRadius(), projectileCollider.getRadius());
 			float closestX = std::clamp(circleCenter.x, obstacleCollider.position.x, obstacleCollider.position.x + obstacleCollider.size.x);
@@ -160,7 +268,7 @@ void ColliderSystem::RegisterHandlers() {
 
 			//Check edge case of corners hit
 			if (std::abs(std::min(distLeft, distRight) - std::min(distTop, distBottom)) < 0.2f) {	//0.2f: Arbitrary number cap to determine corner hit (difference of top/bottom & right/left obstacle intersection, can be adjusted)
-				
+
 				float proSpeed = proVelocity.length();
 				int deflectionDegree;
 
@@ -173,10 +281,10 @@ void ColliderSystem::RegisterHandlers() {
 					else deflectionDegree = 315;
 				}
 
-				proVelocity = sf::Vector2f(proSpeed, sf::Angle( sf::degrees(deflectionDegree) ));
+				proVelocity = sf::Vector2f(proSpeed, sf::Angle(sf::degrees(deflectionDegree)));
 				//float radian = deflectionDegree * PI / 180.0f;
 				//proVelocity = sf::Vector2f{ std::cos(radian), std::sin(radian) } *proSpeed;
-				
+
 
 				//std::cout << "Corner Collision. " << std::min(distLeft, distRight) << " | " << std::min(distTop, distBottom) << " . " << closestX << "|" << closestY << " . " << proVelocity.x << "|" << proVelocity.y << std::endl;
 				m_World->GetComponent<Lifetime>(b).durability -= 1;
@@ -185,7 +293,7 @@ void ColliderSystem::RegisterHandlers() {
 			//Simple X Collision
 			else if (std::min(distLeft, distRight) < std::min(distTop, distBottom) &&
 				((distLeft < distRight && proVelocity.x > 0) ||
-				(distRight < distLeft && proVelocity.x < 0)))
+					(distRight < distLeft && proVelocity.x < 0)))
 			{
 				proVelocity.x = -proVelocity.x;
 				//std::cout << "X Collision. " << std::min(distLeft, distRight) << " | " << std::min(distTop, distBottom) << " . " << closestX << "|" << closestY << " . " << proVelocity.x << "|" << proVelocity.y << std::endl;
@@ -193,14 +301,14 @@ void ColliderSystem::RegisterHandlers() {
 				m_World->GetComponent<Collider>(b).frameBuffer = 2;
 			}
 			// Simple Y collision
-			else if (std::min(distLeft, distRight) > std::min(distTop, distBottom) && 
-					((distTop < distBottom && proVelocity.y > 0) ||
-					(distBottom < distTop && proVelocity.y < 0))) 
+			else if (std::min(distLeft, distRight) > std::min(distTop, distBottom) &&
+				((distTop < distBottom && proVelocity.y > 0) ||
+					(distBottom < distTop && proVelocity.y < 0)))
 			{
-					proVelocity.y = -proVelocity.y;
-					//std::cout << "Y Collision. " << std::min(distLeft, distRight) << " | " << std::min(distTop, distBottom) << " . " << closestX << "|" << closestY << " . " << proVelocity.x << "|" << proVelocity.y << std::endl;
-					m_World->GetComponent<Lifetime>(b).durability -= 1;
-					m_World->GetComponent<Collider>(b).frameBuffer = 2;
+				proVelocity.y = -proVelocity.y;
+				//std::cout << "Y Collision. " << std::min(distLeft, distRight) << " | " << std::min(distTop, distBottom) << " . " << closestX << "|" << closestY << " . " << proVelocity.x << "|" << proVelocity.y << std::endl;
+				m_World->GetComponent<Lifetime>(b).durability -= 1;
+				m_World->GetComponent<Collider>(b).frameBuffer = 2;
 			}
 			//else {
 			//	sf::Vector2f collisionNormal = circleCenter - sf::Vector2f{ closestX, closestY };
@@ -212,55 +320,7 @@ void ColliderSystem::RegisterHandlers() {
 			//}
 		};
 
-	//Player -> Obstacle Collision Logic
-	m_CollisionHandlers[GenerateCollisionKey(ColliderType::PlayerBox, ColliderType::ObstacleBox)] = [this](Entity plyr, Entity obs)
-		{
-			auto& obstacleTrans = m_World->GetComponent<Transform>(obs);
-			auto& playerTrans = m_World->GetComponent<Transform>(plyr);
-
-			auto& obstacleRenderable = m_World->GetComponent<Renderable>(obs);
-			auto& playerRenderable = m_World->GetComponent<Renderable>(plyr);
-
-			AABB obstacleAABB{ obstacleTrans.position, obstacleRenderable.size };
-			AABB playerAABB{ playerTrans.position,  playerRenderable.size };
-
-			AABB overlap;
-			if (!AABBIntersect(obstacleAABB, playerAABB, &overlap)) return;
-
-			//std::cout << "\nOverlap Size: " << overlap.size.x << "," << overlap.size.y << " | " << "Overlap Position: " << overlap.pos.x << "," << overlap.pos.y;
-
-			// choose smaller penetration axis
-			if (overlap.size.x < overlap.size.y) {
-				// horizontal collision
-				if (playerAABB.left() < obstacleAABB.left()) {
-					// player is left of obstacle -> push left
-					playerTrans.position.x -= overlap.size.x;
-				}
-				else {
-					// player is right of obstacle -> push right
-					playerTrans.position.x += overlap.size.x;
-				}
-				// zero horizontal velocity
-				m_World->GetComponent<Physics>(plyr).velocity.x = 0.f;
-			}
-			else {
-				// vertical collision (push out on y)
-				if (playerAABB.top() < obstacleAABB.top()) {
-					// player is above obstacle -> land on top
-					playerTrans.position.y -= overlap.size.y;
-					// set grounded flag (optional)
-					m_World->GetComponent<Physics>(plyr).isGrounded = true;
-				}
-				else {
-					// player hit obstacle from below
-					playerTrans.position.y += overlap.size.y;
-				}
-				// zero vertical velocity
-				m_World->GetComponent<Physics>(plyr).velocity.y = 0.f;
-			}
-		};
-
-	//Target -> Obstacle Collision Logic
+	//Obstacle -> Target Collision Logic
 	m_CollisionHandlers[GenerateCollisionKey(ColliderType::ObstacleBox, ColliderType::TargetBox)] = [this](Entity obs, Entity target)
 		{
 			auto& obstacleTrans = m_World->GetComponent<Transform>(obs);
@@ -286,6 +346,58 @@ void ColliderSystem::RegisterHandlers() {
 			m_World->GetComponent<Physics>(target).velocity.y = 0.f;
 		};
 
+	// === Enemy === //
+	//Enemy -> Obstacle Collision Logic
+	m_CollisionHandlers[GenerateCollisionKey(ColliderType::ObstacleBox, ColliderType::EnemyBox)] = [this](Entity obs, Entity enemy)
+		{
+			auto& obstacleTrans = m_World->GetComponent<Transform>(obs);
+			auto& enemyTrans = m_World->GetComponent<Transform>(enemy);
+
+			auto& obstacleRenderable = m_World->GetComponent<Renderable>(obs);
+			auto& enemyRenderable = m_World->GetComponent<Renderable>(enemy);
+
+			AABB obstacleAABB{ obstacleTrans.position, obstacleRenderable.size };
+			AABB enemyAABB{ enemyTrans.position,  enemyRenderable.size };
+
+			AABB overlap;
+			if (!AABBIntersect(obstacleAABB, enemyAABB, &overlap)) return;
+			if (enemyAABB.top() < obstacleAABB.top()) {
+				enemyTrans.position.y -= overlap.size.y;
+				m_World->GetComponent<Physics>(enemy).isGrounded = true;
+			}
+			else {
+				// player hit obstacle from below
+				enemyTrans.position.y += overlap.size.y;
+			}
+			// zero vertical velocity
+			m_World->GetComponent<Physics>(enemy).velocity.y = 0.f;
+		};
+
+	//Enemy -> Projectile Collision Logic
+	m_CollisionHandlers[GenerateCollisionKey(ColliderType::ProjectileBox, ColliderType::EnemyBox)] = [this](Entity proj, Entity enemy)
+		{
+			Enemy& enemyComp = m_World->GetComponent<Enemy>(enemy);
+			if (enemyComp.state == EnemyState::Guard) { //Add facing direction check later
+				enemyComp.justDeflected = true;
+				Physics& projectilePhys = m_World->GetComponent<Physics>(proj);
+				projectilePhys.velocity = -projectilePhys.velocity;
+
+				m_World->GetComponent<Collider>(proj).isDanger = true; //Set as damaging to player
+
+				Lifetime& projLife = m_World->GetComponent<Lifetime>(proj);
+				if (projLife.durability > 1) {
+					projLife.durability -= 1;
+					m_World->GetComponent<Renderable>(proj).tint = sf::Color::Red;
+				}
+			}
+			else {
+				m_World->GetComponent<Lifetime>(proj).durability = 0;
+				m_World->GetComponent<Enemy>(enemy).health = 0;
+			}
+		};
+
+
+	//Target -> Projectile Collision Logic
 	m_CollisionHandlers[GenerateCollisionKey(ColliderType::TargetBox, ColliderType::ProjectileBox)] = [this](Entity a, Entity b)
 		{
 			m_World->GetComponent<Lifetime>(a).durability = 0;

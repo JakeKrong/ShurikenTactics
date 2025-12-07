@@ -4,6 +4,7 @@
 
 #define COLLIDER_RENDER_DEBUG_FLAG 0
 #include "Collider.h"
+#include <iostream>
 
 void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime) {
 	if (!m_World) return;
@@ -33,6 +34,7 @@ void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime
 		renderable.setPosition(transformComp.position);
 		renderable.setRotation(sf::degrees(transformComp.rotation));
 		renderable.setOrigin({ 0.0f,0.0f });
+		renderable.setFillColor(renderComp.tint);
 
 		//Check if it has a texture
 		if (renderComp.texture != nullptr){
@@ -45,10 +47,6 @@ void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime
 					renderable.setTextureRect(animationComp.activeSprite);
 				}
 			}
-		}
-		//Set default shape and colour if no texture is found
-		else {
-			renderable.setFillColor(sf::Color::White);
 		}
 
 		if (!renderComp.flipX) {
@@ -68,7 +66,7 @@ void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime
 	for (const Entity& systemEnt : m_Entities) {
 		if (m_World->HasComponent<Collider>(systemEnt)) {
 			const Collider& entCollider = m_World->GetComponent<Collider>(systemEnt);
-			for (auto& collider : entCollider.entityColliders) {
+			for (auto& [collider, _] : entCollider.entityColliders) {
 				std::visit([&](auto&& shape) {
 					using T = std::decay_t<decltype(shape)>;
 
@@ -103,6 +101,14 @@ void RenderSystem::SetAnimationFrame(const Renderable& renderableComp, Animation
 	animationComp.timeSinceLastFrame += deltaTime;
 
 	if (animationComp.timeSinceLastFrame >= animationComp.frameTime) {
+		if (animationComp.currentFrame + 1 >= animationComp.totalFrames && !animationComp.loopAnim) {
+			if (animationComp.currentFrame + 1 == animationComp.totalFrames) {
+				animationComp.currentFrame += 1;
+				if (animationComp.OnAnimationEnd != nullptr) animationComp.OnAnimationEnd();
+			}
+			return;
+		}
+
 		animationComp.currentFrame = (animationComp.currentFrame + 1) % animationComp.totalFrames;
 
 		const sf::Vector2u& textureDim = renderableComp.texture->getSize();
@@ -119,7 +125,13 @@ void RenderSystem::SetAnimationFrame(const Renderable& renderableComp, Animation
 			{static_cast<int>(frameSize.x), static_cast<int>(frameSize.y)}
 		};
 
-		animationComp.timeSinceLastFrame -= animationComp.frameTime;
+		//If have Animation Event on current frame, call function
+		if (animationComp.animationEvents.find(animationComp.currentFrame + 1) != animationComp.animationEvents.end()) {
+			animationComp.animationEvents.at(animationComp.currentFrame + 1)();
+		}
+
+		//animationComp.timeSinceLastFrame -= animationComp.frameTime;
+		animationComp.timeSinceLastFrame = 0;
 	}
 }
 

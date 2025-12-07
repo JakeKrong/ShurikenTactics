@@ -130,7 +130,7 @@ public:
 		std::type_index componentType = typeid(T);
 		assert(m_ComponentIDs.find(componentType) != m_ComponentIDs.end() && "Removing a Component Type is that is Not Registered!");
 
-		m_ComponentArraysMap[componentType]->RemoveComponent(ent);
+		GetComponentArray<T>()->RemoveComponent(ent);
 	}
 
 	void EntityDestroyed(Entity ent) {

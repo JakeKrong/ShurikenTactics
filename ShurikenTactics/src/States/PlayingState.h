@@ -7,6 +7,7 @@
 #include "ColliderSystem.h"
 #include "PhysicsSystem.h"
 #include "LifetimeSystem.h"
+#include "EnemySystem.h"
 
 class PlayingState : public IState {
 public:
@@ -21,6 +22,7 @@ public:
 	void UpdatePlayerState(sf::RenderWindow&);
 	void ThrowShuriken(sf::RenderWindow&, sf::Vector2f);
 	void SpawnTarget();
+	void EnqueueGameOver();
 
 private:
 	Game* m_Game;
@@ -30,6 +32,7 @@ private:
 	Ref<ColliderSystem> m_ColliderSystem;
 	Ref<PhysicsSystem> m_PhysicsSystem;
 	Ref<LifetimeSystem> m_LifetimeSystem;
+	Ref<EnemySystem> m_EnemySystem;
 
-	float shurikenCD{0.0f};
+	float shurikenCD{0.0f}; //Consider change
 };

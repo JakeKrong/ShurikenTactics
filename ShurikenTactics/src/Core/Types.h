@@ -4,6 +4,7 @@
 #include <memory>
 #include <SFML/System/Vector2.hpp>
 #define TargetFixedUpdateFrequency 144
+#define GlobalVolumeSetting 10
 
 using Entity = std::uint16_t;
 using ComponentID = size_t;

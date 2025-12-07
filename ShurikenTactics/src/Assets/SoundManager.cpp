@@ -1,16 +1,22 @@
+#include "Types.h"
 #include "SoundManager.h"
 #include <print>
 
 sf::Sound& SoundManager::Load(const std::string& filePath) {
 	if (!m_BuffersMap.count(filePath)) {
 		sf::SoundBuffer buffer;
-		if (!buffer.loadFromFile(m_SoundBasePath + filePath)) {
-			std::println("[Sound Manager] Failed to load texture from {}!", filePath);
+		if (!buffer.loadFromFile(m_SoundBasePath + filePath + ".mp3")) {
+			std::println("[Sound Manager] Failed to load audioc from {}!", filePath);
 		}
 		m_BuffersMap[filePath] = std::move(buffer);
 	}
 
 	m_SoundQueue.emplace_back(m_BuffersMap[filePath]);
+
+	//Play sound
+	m_SoundQueue.back().setVolume(GlobalVolumeSetting);	
+	m_SoundQueue.back().play();
+
 	return m_SoundQueue.back();
 }
 

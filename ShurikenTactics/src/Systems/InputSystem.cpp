@@ -16,6 +16,7 @@ void InputSystem::Update(sf::RenderWindow& renderWindow, float deltaTime) {
 		m_A_KeyPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A);
 		m_D_KeyPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D);
 		m_W_KeyPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W);
+		m_S_KeyPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S);
 	}
 	else {
 		m_A_KeyPressed = m_D_KeyPressed = m_W_KeyPressed = false;
@@ -32,14 +33,15 @@ void InputSystem::Update(sf::RenderWindow& renderWindow, float deltaTime) {
 	newIntent.mousePos = m_MousePosition;
 
 	//Movement 
-	if (!m_W_KeyPressed) {
+	if (!m_W_KeyPressed && !m_S_KeyPressed) {
 		if (m_A_KeyPressed && !m_D_KeyPressed)
 			newIntent.walkLeft = true;
 		if (m_D_KeyPressed && !m_A_KeyPressed)
 			newIntent.walkRight = true;
 	}
 	else {
-		newIntent.jump = m_W_KeyPressed;
+		if (m_W_KeyPressed) newIntent.jump = true;
+		if (m_S_KeyPressed) newIntent.dropDown = true;
 	}
 
 	// Projectile
@@ -58,26 +60,26 @@ void InputSystem::Update(sf::RenderWindow& renderWindow, float deltaTime) {
 
 	// *** Process input intents logic *** //
 
-	for (const Entity& entity : m_Entities) {
-		Transform& transComp = m_World->GetComponent<Transform>(entity);
-		Physics& physicsComp = m_World->GetComponent<Physics>(entity);
-		Renderable& renderComp = m_World->GetComponent<Renderable>(entity);
+	//for (const Entity& entity : m_Entities) {
+	//	Transform& transComp = m_World->GetComponent<Transform>(entity);
+	//	Physics& physicsComp = m_World->GetComponent<Physics>(entity);
+	//	Renderable& renderComp = m_World->GetComponent<Renderable>(entity);
 
-		if ((!m_Intent.walkLeft && !m_Intent.walkRight) || m_Intent.isAiming) {
-			physicsComp.velocity.x = 0;
-		}
+	//	if ((!m_Intent.walkLeft && !m_Intent.walkRight) || m_Intent.isAiming) {
+	//		physicsComp.velocity.x = 0;
+	//	}
 
-		if (!m_KeyboardDisabled && !m_Intent.isAiming) {
-			if (m_Intent.walkLeft) {
-				physicsComp.velocity.x = -300;
-				renderComp.flipX = true;
-			}
-			if (m_Intent.walkRight) {
-				physicsComp.velocity.x = 300;
-				renderComp.flipX = false;
-			}
-		}
-	}
+	//	if (!m_KeyboardDisabled && !m_Intent.isAiming) {
+	//		if (m_Intent.walkLeft) {
+	//			physicsComp.velocity.x = -300;
+	//			renderComp.flipX = true;
+	//		}
+	//		if (m_Intent.walkRight) {
+	//			physicsComp.velocity.x = 300;
+	//			renderComp.flipX = false;
+	//		}
+	//	}
+	//}
 }
 
 

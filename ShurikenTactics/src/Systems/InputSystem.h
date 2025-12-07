@@ -10,6 +10,7 @@ struct PlayerInputIntent {
 	bool walkLeft = false;
 	bool walkRight = false;
 	bool jump = false;
+	bool dropDown = false;
 
 	bool isAiming = false;
 	bool projectileReleased = false;
@@ -34,6 +35,7 @@ private:
 	bool m_A_KeyPressed{ false };
 	bool m_D_KeyPressed{ false };
 	bool m_W_KeyPressed{ false };
+	bool m_S_KeyPressed{ false };
 
 	bool m_MouseLeftClicked{ false };
 	bool m_MouseLeftHeld{ false };

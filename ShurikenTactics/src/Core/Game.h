@@ -16,9 +16,11 @@ public:
 	~Game() = default;
 	void Run();
 
-	sf::RenderWindow& GetWindow();
 	World& GetWorld();
+	sf::RenderWindow& GetWindow();
+	
 	TextureManager& GetTextureManager();
+	SoundManager& GetSoundManager();
 
 private:
 	sf::RenderWindow m_Window;

@@ -43,3 +43,4 @@ void Game::Run() {
 sf::RenderWindow& Game::GetWindow() { return m_Window; };
 World& Game::GetWorld() { return m_World; };
 TextureManager& Game::GetTextureManager() { return m_TextureManager; };
+SoundManager& Game::GetSoundManager() { return m_SoundManager; };

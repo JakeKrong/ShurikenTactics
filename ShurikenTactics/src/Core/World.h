@@ -33,7 +33,7 @@ public:
 		m_SystemManager->EntitySignatureChanged(ent, updatedSig);
 	}
 	template<typename T>
-	void RemoveComponentFromEntity(Entity ent, T comp) {
+	void RemoveComponentFromEntity(Entity ent) {
 		m_ComponentManager->RemoveComponent<T>(ent);
 
 		auto& updatedSig = m_EntityManager->GetSignature(ent);
@@ -81,4 +81,6 @@ private:
 	Scope<EntityManager> m_EntityManager;
 	Scope<ComponentManager> m_ComponentManager;
 	Scope<SystemManager> m_SystemManager;
+
+	Entity playerEnt{};
 };

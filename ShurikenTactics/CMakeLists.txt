@@ -13,6 +13,7 @@ add_executable (ShurikenTactics
 
 "src/Components/Transform.h" "src/Components/Renderable.h" "src/Components/Physics.h" "src/Components/Player.h" 
 "src/Components/Components.h" "src/Components/Button.h""src/Components/Collider.h" "src/Components/Lifetime.h"
+"src/Components/Enemy.h"
 
 "src/Systems/RenderSystem.h"  "src/Systems/RenderSystem.cpp" 
 "src/Systems/ColliderSystem.h" "src/Systems/ColliderSystem.cpp" 
@@ -28,7 +29,7 @@ add_executable (ShurikenTactics
 "src/States/IState.h" "src/States/MainMenuState.h" 
 "src/States/MainMenuState.cpp" "src/States/PlayingState.h" 
 "src/States/PlayingState.cpp" 
- "src/Gameplay/TrajectoryMath.h" "src/Gameplay/TrajectoryMath.cpp")
+ "src/Gameplay/TrajectoryMath.h" "src/Gameplay/TrajectoryMath.cpp" "src/Systems/EnemySystem.h" "src/Systems/EnemySystem.cpp")
 
 target_include_directories(ShurikenTactics PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src

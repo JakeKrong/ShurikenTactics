@@ -92,9 +92,11 @@ std::vector<TrajectorySegment> ComputeTrajectory(
 
         for (auto& [ent, col] : world.GetAllComponentsOfType<Collider>()) //Iterate over all collider component
         {
-            if (col->type != ColliderType::ObstacleBox && col->type != ColliderType::TargetBox) continue;
+            if (col->type != ColliderType::ObstacleBox && col->type != ColliderType::TargetBox && 
+                col->type != ColliderType::EnemyBox) 
+                continue;
 
-            sf::FloatRect colliderHitBox = std::get<sf::FloatRect>(col->entityColliders[0]);
+            sf::FloatRect colliderHitBox = std::get<sf::FloatRect>(col->entityColliders[0].first);
 
             AABB colliderAABB{ colliderHitBox.position, colliderHitBox.size };
 
@@ -161,21 +163,23 @@ std::vector<TrajectorySegment> ComputeTrajectory(
                 hasHit = true;
                 hitIsCorner = isCornerHit;
                 if (isCornerHit) hitCornerCenter = currentCornerCenter;
+                hitType = col->type;
             }
 
-            hitType = col->type;
+            
         }
 
         if (!hasHit) break;
 
         // --- Handle Collision Response ---
         sf::Vector2f endPoint;
-        if (!(bounce >= maxBounces - 1 && bestDist > 100)) //Not final bounce
+        float endPreviewLimit = 100;
+        if (!(bounce >= maxBounces - 1 && bestDist > endPreviewLimit)) //Not final bounce
         {
             endPoint = origin + direction * bestDist;
         }
         else {
-            endPoint = origin + direction * 100.f;
+            endPoint = origin + direction * endPreviewLimit;
         }
         
         segments.push_back({ origin, endPoint });
@@ -187,7 +191,6 @@ std::vector<TrajectorySegment> ComputeTrajectory(
 
             AABB bestOriginalAABB = { bestOriginalRect.position, bestOriginalRect.size };
             int deflectionDegree;
-
             if (hitCornerCenter.y == bestOriginalAABB.bottom()) {
                 if (hitCornerCenter.x == bestOriginalAABB.right()) deflectionDegree = 45;
                 else deflectionDegree = 135;
@@ -202,11 +205,15 @@ std::vector<TrajectorySegment> ComputeTrajectory(
         }
         else {
             // Flat Side Normal
+            float expandedLeft = bestOriginalRect.position.x - radius;
+            float expandedRight = bestOriginalRect.position.x + bestOriginalRect.size.x + radius;
+            float expandedTop = bestOriginalRect.position.y - radius;
+            float expandedBottom = bestOriginalRect.position.y + bestOriginalRect.size.y + radius;
 
-            float distLeft = std::abs(endPoint.x - bestOriginalRect.position.x - radius);
-            float distRight = std::abs(endPoint.x - (bestOriginalRect.position.x + bestOriginalRect.size.x) - radius);
-            float distTop = std::abs(endPoint.y - bestOriginalRect.position.y - radius);
-            float distBottom = std::abs(endPoint.y - (bestOriginalRect.position.y + bestOriginalRect.size.y) - radius);
+            float distLeft = std::abs(endPoint.x - expandedLeft);
+            float distRight = std::abs(endPoint.x - expandedRight);
+            float distTop = std::abs(endPoint.y - expandedTop);
+            float distBottom = std::abs(endPoint.y - expandedBottom);
 
             // Check min for X and Y
             float minX = std::min(distLeft, distRight);
@@ -227,8 +234,33 @@ std::vector<TrajectorySegment> ComputeTrajectory(
         // Slightly nudge origin to prevent double-hit registering on same obstacle
         origin = endPoint + direction * (EPSILON * 5.f);
 
-        if (hitType == ColliderType::TargetBox) break; // Break loop regardless of remaining bounce if target is hit
+        if (hitType == ColliderType::TargetBox || hitType == ColliderType::EnemyBox) break; // Break loop regardless of remaining bounce if target is hit
     }
 
     return segments;
+}
+
+bool HasLineOfSight(World& world, const sf::Vector2f& origin, const sf::Vector2f& target)
+{
+    sf::Vector2f dir = (target - origin).normalized();
+
+    float bestDist = std::numeric_limits<float>::infinity();
+
+    for (auto& [ent, col] : world.GetAllComponentsOfType<Collider>())
+    {
+        if (col->type != ColliderType::ObstacleBox) continue;
+
+        auto rect = std::get<sf::FloatRect>(col->entityColliders[0].first);
+        AABB aabb{ rect.position, rect.size };
+
+        // Use your EXACT collision logic
+        float distBox = RayAABB(origin, dir, aabb);
+
+        if (distBox < bestDist)
+            bestDist = distBox;
+    }
+
+    float distToPlayer = (target - origin).length();
+
+    return bestDist >= distToPlayer; // No hit before player
 }

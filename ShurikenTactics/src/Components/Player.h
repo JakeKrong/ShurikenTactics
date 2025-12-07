@@ -16,4 +16,5 @@ struct Player {
 	bool isControllable{ false };
 
 	float movementSpeed = 20.0f;
+	float jumpForce = 1000.f;
 };

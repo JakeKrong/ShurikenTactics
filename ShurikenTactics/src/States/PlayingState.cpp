@@ -26,6 +26,7 @@ void PlayingState::Enter() {
 	world.RegisterComponent<Player>();
 	world.RegisterComponent<Physics>();
 	world.RegisterComponent<Lifetime>();
+	world.RegisterComponent<Enemy>();
 
 	//Register Systems
 	m_RenderSystem = world.RegisterSystem<RenderSystem>();
@@ -33,6 +34,7 @@ void PlayingState::Enter() {
 	m_ColliderSystem = world.RegisterSystem<ColliderSystem>();
 	m_PhysicsSystem = world.RegisterSystem<PhysicsSystem>();
 	m_LifetimeSystem = world.RegisterSystem<LifetimeSystem>();
+	m_EnemySystem = world.RegisterSystem<EnemySystem>();
 
 	//Set Systems World
 	m_RenderSystem->SetWorld(&world);
@@ -40,6 +42,10 @@ void PlayingState::Enter() {
 	m_ColliderSystem->SetWorld(&world);
 	m_PhysicsSystem->SetWorld(&world);
 	m_LifetimeSystem->SetWorld(&world);
+	m_EnemySystem->SetWorld(&world);
+
+	m_EnemySystem->SetTextureManager(&m_Game->GetTextureManager()); //Set Texture Manager referenced by enemySystem
+	m_EnemySystem->SetSoundManager(&m_Game->GetSoundManager());
 
 	//Set System Signature
 	Signature renderSignature;
@@ -67,6 +73,10 @@ void PlayingState::Enter() {
 	lifetimeSignature.set(world.GetComponentID<Lifetime>());
 	world.SetSystemSignature<LifetimeSystem>(lifetimeSignature);
 
+	Signature enemySignature;
+	enemySignature.set(world.GetComponentID<Enemy>());
+	world.SetSystemSignature<EnemySystem>(enemySignature);
+
 	PrefabGen::game = m_Game;
 	m_Game->GetTextureManager().InitGameAnimationData();
 
@@ -74,22 +84,24 @@ void PlayingState::Enter() {
 	//Background
 	Entity background = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(background, { {0.0f,0.0f} });
-	world.AddComponentToEntity<Renderable>(background, { { 1280, 720 }, RenderLayer::Background, true, &m_Game->m_TextureManager.Load("Dojo_Background")});
+	world.AddComponentToEntity<Renderable>(background, { { 1280, 720 }, RenderLayer::Background, &m_Game->m_TextureManager.Load("Dojo_Background"), true});
 
 	//Floor
-	PrefabGen::Platform({ 0,680 }, { 1300,50 });
+	PrefabGen::Floor({ 0,680 }, { 1300,50 });
 
 	//Ceiling
-	PrefabGen::Platform({ 0,0 }, { 1300,50 });
+	PrefabGen::Floor({ 0,0 }, { 1300,50 });
 
 	//Walls
 	PrefabGen::Wall({ 0,0 }, { 50, 800 });
 	PrefabGen::Wall({ 1230,0 }, { 50, 800 });
 
 	//Extra Platforms
-	PrefabGen::Platform({ 0,500 }, { 600,50 });
-	PrefabGen::Platform({ 700,200 }, { 800,50 });
-	PrefabGen::Platform({ 0,300 }, { 300,50 });
+	PrefabGen::Floor({ 0,500 }, { 600,50 });
+	PrefabGen::Floor({ 700,200 }, { 800,50 });
+	PrefabGen::Floor({ 0,300 }, { 300,50 });
+
+	PrefabGen::Platform({ 600,500 }, { 630,20 });
 
 	//Test target
 	SpawnTarget();
@@ -98,22 +110,8 @@ void PlayingState::Enter() {
 	PrefabGen::Player();
 
 	//Test enemy
-	Entity enemy = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(enemy, { {400.0f,200.0f} });
-	world.AddComponentToEntity<Renderable>(enemy, { { 100, 130 }, RenderLayer::GameObject1, true, &m_Game->m_TextureManager.Load("Samurai_Idle_Spirte") });
-	world.AddComponentToEntity<AnimationData>(enemy, { {6,1}, 6, 0.15f });
-	Physics enemyPhy;
-	enemyPhy.affectedByGravity = true;
-	enemyPhy.mass = 10;
-	world.AddComponentToEntity<Physics>(enemy, enemyPhy);
+	PrefabGen::Samurai({ 400.0f,200.0f });
 
-	Collider collider;
-	sf::FloatRect enemyHitbox;
-	enemyHitbox.position = { 400.0f,200.0f };
-	enemyHitbox.size = { 100, 130 };
-	collider.entityColliders.push_back(enemyHitbox);
-	collider.type = ColliderType::PlayerBox;
-	world.AddComponentToEntity<Collider>(enemy, collider);
 }
 
 void PlayingState::Exit() {
@@ -135,6 +133,7 @@ void PlayingState::Update(sf::RenderWindow& renderWindow, const float& deltaTime
 	m_PhysicsSystem->Update(deltaTime);
 	m_LifetimeSystem->Update(deltaTime);	
 	m_ColliderSystem->Update();
+	m_EnemySystem->Update(deltaTime);
 	
 	UpdatePlayerState(renderWindow);
 
@@ -161,70 +160,95 @@ void PlayingState::HandleEvents(const sf::Event& event) {
 void PlayingState::UpdatePlayerState(sf::RenderWindow& renderWindow) {
 	PlayerInputIntent input = m_InputSystem->GetIntent();
 
-	Entity playerEnt = *m_InputSystem->ReturnEntities().begin();
 	World& world = m_Game->GetWorld();
+
+	Entity playerEnt = world.GetAllComponentsOfType<Player>()[0].first; //Get player entity
+	Player& playerComp = world.GetComponent<Player>(playerEnt);
+
+	if (playerComp.health <= 0) {
+		EnqueueGameOver();
+		return;
+	}
+
 	Transform& playerTransform = world.GetComponent<Transform>(playerEnt);
 	Renderable& playerRenderable = world.GetComponent<Renderable>(playerEnt);
+	Physics& playerPhysics = world.GetComponent<Physics>(playerEnt);
 	AnimationData& playerAnimation = world.GetComponent<AnimationData>(playerEnt);
+	Collider& playerCollider = world.GetComponent<Collider>(playerEnt);
 
-	if (input.projectileReleased && shurikenCD <= 0.0f)
-		ThrowShuriken(renderWindow, m_Game->GetWindow().mapPixelToCoords(input.mousePos));
-	else if (input.isAiming) {
-		if (playerRenderable.texture != &m_Game->m_TextureManager.Load("Player_Aim"));
-		{
-			playerRenderable.texture = &m_Game->m_TextureManager.Load("Player_Aim");
-			AnimationData animData;
-			playerAnimation = animData;
-		}
-		sf::FloatRect playerBox{ {world.GetComponent<Transform>(playerEnt).position},
-					 {world.GetComponent<Renderable>(playerEnt).size} };
-		sf::Vector2f shurikenDir = (m_Game->GetWindow().mapPixelToCoords(input.mousePos) - playerBox.getCenter()).normalized();
-
-		sf::Vector2f trajectoryEnd;
-		float shurikenRadius = 15.f; //Hardcode for now
-		for (auto& [start, end] : ComputeTrajectory(world, playerBox.getCenter(), shurikenDir, shurikenRadius, 2)) {
-			Entity assistLine = world.CreateEntity();
-
-			Transform trans;
-			trans.position = start;
-			trans.rotation = (end - start).angle().asDegrees();
-			world.AddComponentToEntity<Transform>(assistLine, trans);
-
-			Renderable render;
-			render.size = {(end - start).length() , 2 };
-
-			render.texture = &m_Game->GetTextureManager().Load("Trajectory_Preview");
-			world.AddComponentToEntity<Renderable>(assistLine, render);
-
-			world.AddComponentToEntity<Lifetime>(assistLine, {0.01f}); //Lasts 1 frame only
-			trajectoryEnd = end;
-		}
-
-		Entity preview = world.CreateEntity();
-		// Adjust shuriken preview to be centered at line's end
-		world.AddComponentToEntity<Transform>(preview, { { trajectoryEnd.x - shurikenRadius, trajectoryEnd.y - shurikenRadius } });
-		world.AddComponentToEntity<Renderable>(preview, { {30,30}, RenderLayer::UI, true, &m_Game->GetTextureManager().Load("Shuriken_Preview") });
-		world.AddComponentToEntity<Lifetime>(preview, { 0.01f });
-
+	if ((!input.walkLeft && !input.walkRight) || input.isAiming) playerPhysics.velocity.x = 0;
+	if (input.dropDown && playerCollider.canPhaseThroughPlatform) {
+		playerCollider.phaseThroughPlatform = true;
 	}
-	else if(shurikenCD <= 0) {
+	else {
+		playerCollider.phaseThroughPlatform = false;
+	}
+	if (playerPhysics.isGrounded) {
+		if (input.projectileReleased && shurikenCD <= 0.0f)
+			ThrowShuriken(renderWindow, m_Game->GetWindow().mapPixelToCoords(input.mousePos));
+		else if (input.isAiming) {
+			if (playerRenderable.texture != &m_Game->m_TextureManager.Load("Player_Aim"));
+			{
+				playerRenderable.texture = &m_Game->m_TextureManager.Load("Player_Aim");
+				AnimationData animData;
+				playerAnimation = animData;
+			}
+			sf::FloatRect playerBox{ {world.GetComponent<Transform>(playerEnt).position},
+						 {world.GetComponent<Renderable>(playerEnt).size} };
+			sf::Vector2f shurikenDir = (m_Game->GetWindow().mapPixelToCoords(input.mousePos) - playerBox.getCenter()).normalized();
 
-		//if (input.jump) {
-		//	//Do jump
-		//}
-		if (input.walkLeft || input.walkRight) {
-			if (playerRenderable.texture != &m_Game->m_TextureManager.Load("Player_Sprint_Sprite")) {
-				playerRenderable.texture = &m_Game->m_TextureManager.Load("Player_Sprint_Sprite");
-				m_Game->m_TextureManager.SetAnimationData("Player_Sprint_Sprite", playerAnimation);
+			sf::Vector2f trajectoryEnd;
+			float shurikenRadius = 15.f; //Hardcode for now
+			for (auto& [start, end] : ComputeTrajectory(world, playerBox.getCenter(), shurikenDir, shurikenRadius, 2)) {
+				Entity assistLine = world.CreateEntity();
+
+				Transform trans;
+				trans.position = start;
+				trans.rotation = (end - start).angle().asDegrees();
+				world.AddComponentToEntity<Transform>(assistLine, trans);
+
+				Renderable render;
+				render.size = { (end - start).length() , 2 };
+
+				render.texture = &m_Game->GetTextureManager().Load("Trajectory_Preview");
+				world.AddComponentToEntity<Renderable>(assistLine, render);
+
+				world.AddComponentToEntity<Lifetime>(assistLine, { 0.001f }); //Lasts 1 frame only
+				trajectoryEnd = end;
+			}
+
+			Entity preview = world.CreateEntity();
+			// Adjust shuriken preview to be centered at line's end
+			world.AddComponentToEntity<Transform>(preview, { { trajectoryEnd.x - shurikenRadius, trajectoryEnd.y - shurikenRadius } });
+			world.AddComponentToEntity<Renderable>(preview, { {30,30}, RenderLayer::UI, &m_Game->GetTextureManager().Load("Shuriken_Preview"), true });
+			world.AddComponentToEntity<Lifetime>(preview, { 0.01f });
+
+		}
+		else if (shurikenCD <= 0) {
+			if (input.jump) {
+				playerPhysics.velocity.y -= playerComp.jumpForce;
+
+				m_Game->GetTextureManager().ChangeEntitySprite("Player_Jump_Sprite", playerRenderable, playerAnimation);
+			}
+			else if (input.walkLeft || input.walkRight) {
+				m_Game->GetTextureManager().ChangeEntitySprite("Player_Sprint_Sprite", playerRenderable, playerAnimation);
+				if (input.walkLeft) {
+					playerPhysics.velocity.x = -300;
+					playerRenderable.flipX = true;
+				}
+				else {
+					playerPhysics.velocity.x = 300;
+					playerRenderable.flipX = false;
+				}
+			}
+			else {
+				playerPhysics.velocity.x = 0.f;
+
+				m_Game->GetTextureManager().ChangeEntitySprite("Player_Idle_Sprite", playerRenderable, playerAnimation);
 			}
 		}
-		else {
-			if (playerRenderable.texture != &m_Game->m_TextureManager.Load("Player_Idle_Sprite")) {
-				playerRenderable.texture = &m_Game->m_TextureManager.Load("Player_Idle_Sprite");
-				m_Game->m_TextureManager.SetAnimationData("Player_Idle_Sprite", playerAnimation);
-			}
-		}
 	}
+	else m_Game->GetTextureManager().ChangeEntitySprite("Player_Jump_Sprite", playerRenderable, playerAnimation);
 }
 
 void PlayingState::ThrowShuriken(sf::RenderWindow& renderWindow, sf::Vector2f mousePos){
@@ -235,19 +259,18 @@ void PlayingState::ThrowShuriken(sf::RenderWindow& renderWindow, sf::Vector2f mo
 
 	Entity shuriken = PrefabGen::Shuriken();
 
-	sf::CircleShape shurikenCollider = std::get<sf::CircleShape>(world.GetComponent<Collider>(shuriken).entityColliders[0]);
+	sf::CircleShape shurikenCollider = std::get<sf::CircleShape>(world.GetComponent<Collider>(shuriken).entityColliders[0].first);
 	world.GetComponent<Transform>(shuriken) = { playerBox.getCenter() - sf::Vector2f{shurikenCollider.getRadius(), shurikenCollider.getRadius()} };
 
 	sf::Vector2f shurikenDir = mousePos - playerBox.getCenter();
 	sf::Vector2f normalizedDir = shurikenDir.normalized();
 
-	world.GetComponent<Physics>(shuriken) = { {normalizedDir.x * 800, normalizedDir.y * 800 } };
+	world.GetComponent<Physics>(shuriken) = { {normalizedDir.x * 1000, normalizedDir.y * 1000 } };
 
 	Renderable& playerRenderable = world.GetComponent<Renderable>(playerEnt);
 	AnimationData& playerAnimation = world.GetComponent<AnimationData>(playerEnt);
 
-	playerRenderable.texture = &m_Game->m_TextureManager.Load("Player_Throw_Sprite");
-	m_Game->m_TextureManager.SetAnimationData("Player_Throw_Sprite", playerAnimation);
+	m_Game->GetTextureManager().ChangeEntitySprite("Player_Throw_Sprite", playerRenderable, playerAnimation);
 
 	//Refresh cooldown
 	shurikenCD += 0.30f;
@@ -272,7 +295,7 @@ void PlayingState::SpawnTarget() {
 		Entity destroyEffect = world.CreateEntity();
 		world.AddComponentToEntity<Transform>(destroyEffect, world.GetComponent<Transform>(target));
 		sf::Vector2f& targetSize = world.GetComponent<Renderable>(target).size;
-		world.AddComponentToEntity<Renderable>(destroyEffect, { {targetSize.x, targetSize.y}, RenderLayer::GameObject1, true, &m_Game->m_TextureManager.Load("Explosion") });
+		world.AddComponentToEntity<Renderable>(destroyEffect, { {targetSize.x, targetSize.y}, RenderLayer::GameObject1, &m_Game->m_TextureManager.Load("Explosion"), true });
 		world.AddComponentToEntity<AnimationData>(destroyEffect, { {5,2}, 10, 0.05f });
 		world.AddComponentToEntity<Lifetime>(destroyEffect, { 0.45f ,0 });
 		SpawnTarget();
@@ -281,7 +304,20 @@ void PlayingState::SpawnTarget() {
 
 	Entity spawnSmoke = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(spawnSmoke, { {spawnX, spawnY} });
-	world.AddComponentToEntity<Renderable>(spawnSmoke, { { 60, 100 }, RenderLayer::GameObject1, true, &m_Game->m_TextureManager.Load("Smoke") });
+	world.AddComponentToEntity<Renderable>(spawnSmoke, { { 60, 100 }, RenderLayer::GameObject1, &m_Game->m_TextureManager.Load("Smoke"), true });
 	world.AddComponentToEntity<AnimationData>(spawnSmoke, { {6,1}, 6, 0.1f });
 	world.AddComponentToEntity<Lifetime>(spawnSmoke, { 0.5f,0 });
+}
+
+void PlayingState::EnqueueGameOver() {
+	World& world = m_Game->GetWorld();
+	Entity playerEnt = world.GetAllComponentsOfType<Player>()[0].first; //Get player entity
+	Transform& playerTrans = world.GetComponent<Transform>(playerEnt);
+	Renderable& playerRend = world.GetComponent<Renderable>(playerEnt);
+	AnimationData& playerAnim = world.GetComponent<AnimationData>(playerEnt);
+	Physics& playerPhys = world.GetComponent<Physics>(playerEnt);
+	Collider& playerCollider = world.GetComponent<Collider>(playerEnt);
+	playerTrans.scale.x = 1.2;
+	playerPhys.velocity.x = 0;
+	m_Game->GetTextureManager().ChangeEntitySprite("Player_Death_Sprite", playerRend, playerAnim);
 }

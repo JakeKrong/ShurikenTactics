@@ -11,6 +11,8 @@ namespace PrefabGen {
 		game = g;
 	}
 
+	// ********** Environment Prefabs ********** //
+
 	//If certain prefab parameters increase by a lot, can use struct as params instead to prevent bloat
 	inline Entity Wall(sf::Vector2f position, sf::Vector2f size) {
 		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
@@ -29,36 +31,62 @@ namespace PrefabGen {
 
 		Collider collider;
 		sf::FloatRect rectCollider{ position, size };
-		collider.entityColliders.push_back(rectCollider);
+		collider.entityColliders.push_back({ rectCollider , {}});
 		collider.type = ColliderType::ObstacleBox;
 		world.AddComponentToEntity<Collider>(wall, collider);
 
 		return wall;
 	}
 
-	inline Entity Platform(sf::Vector2f position, sf::Vector2f size) {
+	inline Entity Floor(sf::Vector2f position, sf::Vector2f size) {
 		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
 		World& world = game->GetWorld();
-		Entity platform = world.CreateEntity();
+		Entity floor = world.CreateEntity();
 
 		Transform transform;
 		transform.position = position;
-		world.AddComponentToEntity<Transform>(platform, transform);
+		world.AddComponentToEntity<Transform>(floor, transform);
 
 		Renderable renderable;
 		renderable.size = size;
 		renderable.layer = RenderLayer::GameObject2;
 		renderable.texture = &game->GetTextureManager().Load("Wood_Floor");
-		world.AddComponentToEntity<Renderable>(platform, renderable);
+		world.AddComponentToEntity<Renderable>(floor, renderable);
 
 		Collider collider;
 		sf::FloatRect rectCollider{ position, size };
-		collider.entityColliders.push_back(rectCollider);
+		collider.entityColliders.push_back({ rectCollider , {}});
 		collider.type = ColliderType::ObstacleBox;
-		world.AddComponentToEntity<Collider>(platform, collider);
+		world.AddComponentToEntity<Collider>(floor, collider);
 
-		return platform;
+		return floor;
 	}
+
+	inline Entity Platform(sf::Vector2f position, sf::Vector2f size) {
+		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
+		World& world = game->GetWorld();
+		Entity floor = world.CreateEntity();
+
+		Transform transform;
+		transform.position = position;
+		world.AddComponentToEntity<Transform>(floor, transform);
+
+		Renderable renderable;
+		renderable.size = size;
+		renderable.layer = RenderLayer::GameObject2;
+		renderable.texture = &game->GetTextureManager().Load("Wooden_Platform");
+		world.AddComponentToEntity<Renderable>(floor, renderable);
+
+		Collider collider;
+		sf::FloatRect rectCollider{ position, {size.x, size.y / 2} };
+		collider.entityColliders.push_back({ rectCollider , {} });
+		collider.type = ColliderType::PlatformBox;
+		world.AddComponentToEntity<Collider>(floor, collider);
+
+		return floor;
+	}
+
+	// ********** Player / Player-Related Prefabs ********** //
 
 	inline Entity Player() {
 		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
@@ -90,12 +118,12 @@ namespace PrefabGen {
 		sf::FloatRect playerHitbox;
 		playerHitbox.position = { 400.0f,100.0f };
 		playerHitbox.size = { 80, 100 };
-		collider.entityColliders.push_back(playerHitbox);
+		collider.entityColliders.push_back({ playerHitbox , {}});
 		collider.type = ColliderType::PlayerBox;
 		world.AddComponentToEntity<Collider>(player, collider);
 
 		Physics physics;
-		physics.mass = 100.0f;
+		physics.mass = 25.0f;
 		physics.affectedByGravity = true;
 		world.AddComponentToEntity<Physics>(player, physics);
 
@@ -126,7 +154,7 @@ namespace PrefabGen {
 
 		Collider collider;
 		sf::CircleShape shurikenHitbox{ 15.0f };
-		collider.entityColliders.push_back(shurikenHitbox);
+		collider.entityColliders.push_back({ shurikenHitbox , {}});
 		collider.type = ColliderType::ProjectileBox;
 		world.AddComponentToEntity<Collider>(shuriken, collider);
 
@@ -165,6 +193,80 @@ namespace PrefabGen {
 		return shuriken;
 	}
 
+	// ********** Enemy Prefabs ********** //
+
+	inline Entity Samurai(sf::Vector2f position){
+		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
+		World& world = game->GetWorld();
+
+		Entity samurai = world.CreateEntity();
+
+		Transform transform;
+		transform.position = position;
+		world.AddComponentToEntity<Transform>(samurai, transform);
+
+		Renderable renderable;
+		renderable.size = { 300, 130 };
+		renderable.layer = RenderLayer::GameObject1;
+		renderable.texture = &game->GetTextureManager().Load("Samurai/Idle");
+		world.AddComponentToEntity<Renderable>(samurai, renderable);
+
+		AnimationData animData;
+		game->GetTextureManager().SetAnimationData("Samurai/Idle", animData);
+		world.AddComponentToEntity<AnimationData>(samurai, animData);
+
+		Physics enemyPhy;
+		enemyPhy.affectedByGravity = true;
+		enemyPhy.mass = 10;
+		world.AddComponentToEntity<Physics>(samurai, enemyPhy);
+
+		Collider collider;
+		sf::FloatRect enemyHitbox;
+		enemyHitbox.position = { 400.0f,200.0f };
+		enemyHitbox.size = { 100, 130 };
+		collider.entityColliders.push_back({ enemyHitbox , {110,0} });
+		collider.type = ColliderType::EnemyBox;
+		world.AddComponentToEntity<Collider>(samurai, collider);
+
+		Enemy enemy;
+		world.AddComponentToEntity<Enemy>(samurai, enemy);
+
+		return samurai;
+	}
+
+	inline Entity Archer(sf::Vector2f position) {
+		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
+		World& world = game->GetWorld();
+
+		Entity archer = world.CreateEntity();
+
+		Transform transform;
+		transform.position = position;
+		world.AddComponentToEntity<Transform>(archer, transform);
+
+		Renderable renderable;
+		renderable.size = { 300, 130 };
+		renderable.layer = RenderLayer::GameObject1;
+		renderable.texture = &game->GetTextureManager().Load("Archer/Idle");
+		world.AddComponentToEntity<AnimationData>(archer, { {6,1}, 6, 0.15f });
+
+		Physics enemyPhy;
+		enemyPhy.affectedByGravity = true;
+		enemyPhy.mass = 10;
+		world.AddComponentToEntity<Physics>(archer, enemyPhy);
+
+		Collider collider;
+		sf::FloatRect enemyHitbox;
+		enemyHitbox.position = { 400.0f,200.0f };
+		enemyHitbox.size = { 100, 130 };
+		collider.entityColliders.push_back({ enemyHitbox , {110,0} });
+		collider.type = ColliderType::PlayerBox;
+		world.AddComponentToEntity<Collider>(archer, collider);
+
+		return archer;
+	}
+
+
 	inline Entity Target() {
 		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
 		World& world = game->GetWorld();
@@ -184,13 +286,13 @@ namespace PrefabGen {
 		sf::FloatRect targetHitbox;
 		targetHitbox.position = { 0,0 };
 		targetHitbox.size = { 60,100 };
-		collider.AddRect(targetHitbox);
+		collider.AddRect({ targetHitbox , {} });
 		collider.type = ColliderType::TargetBox;
 		world.AddComponentToEntity<Collider>(target, collider);
 
 		Physics physics;
 		physics.affectedByGravity = true;
-		physics.mass = 100;
+		physics.mass = 30;
 		world.AddComponentToEntity<Physics>(target, physics);
 
 		Lifetime lifetime;
