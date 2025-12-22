@@ -32,6 +32,8 @@ void InputSystem::Update(sf::RenderWindow& renderWindow, float deltaTime) {
 	PlayerInputIntent newIntent;
 	newIntent.mousePos = m_MousePosition;
 
+	newIntent.reset = m_Esc_KeyPressed; //For debugging
+
 	//Movement 
 	if (!m_W_KeyPressed && !m_S_KeyPressed) {
 		if (m_A_KeyPressed && !m_D_KeyPressed)

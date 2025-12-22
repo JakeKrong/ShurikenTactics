@@ -7,10 +7,16 @@
 
 using CollisionKey = std::uint16_t;
 
+class TextureManager; //Forward declaration
+class SoundManager;
+
 class ColliderSystem : public ISystem{
 public:
 	ColliderSystem();
 	void Update();
+
+	void SetTextureManager(TextureManager* tm);
+	void SetSoundManager(SoundManager* sm);
 
 private:
 	bool CheckCollision(Entity, Entity);
@@ -25,4 +31,6 @@ private:
 
 private:
 	std::unordered_map<CollisionKey, std::function<void(Entity, Entity)>> m_CollisionHandlers;
+	TextureManager* m_TextureManager = nullptr;
+	SoundManager* m_SoundManager = nullptr;
 };

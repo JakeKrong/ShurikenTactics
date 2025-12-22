@@ -4,10 +4,11 @@
 
 #include "Components.h"
 
+#include "TextureManager.h"
+#include "SoundManager.h"
+
 #include <iostream>
 #include <algorithm>
-
-#define PI 3.14159265f
 
 ColliderSystem::ColliderSystem() {
 	RegisterHandlers();
@@ -223,12 +224,26 @@ void ColliderSystem::RegisterHandlers() {
 			}
 		};
 
-	//Player -> Platform Collision Logic
+	//Player -> ProjectileBox Collision Logic
 	m_CollisionHandlers[GenerateCollisionKey(ColliderType::PlayerBox, ColliderType::ProjectileBox)] = [this](Entity a, Entity b)
 		{
 			if (m_World->GetComponent<Collider>(b).isDanger) {
 				m_World->GetComponent<Player>(a).health = 0;
 				m_World->GetComponent<Lifetime>(b).durability = 0;
+				m_SoundManager->PlaySound("Pierced");
+
+				//Blood splatter
+				Entity blood = m_World->CreateEntity();
+				m_World->AddComponentToEntity<Transform>(blood, m_World->GetComponent<Transform>(a));
+				m_World->GetComponent<Transform>(blood).position += {-20, 20};
+				Renderable bloodRend{ {50,50} };
+				bloodRend.layer = RenderLayer::Player;
+				AnimationData bloodAnim;
+				bloodRend.flipX = true;
+				m_TextureManager->ChangeEntitySprite("Effects/Blood", bloodRend, bloodAnim);
+				m_World->AddComponentToEntity<Renderable>(blood, bloodRend);
+				m_World->AddComponentToEntity<AnimationData>(blood, bloodAnim);
+				m_World->AddComponentToEntity<Lifetime>(blood, { bloodAnim.totalFrames * bloodAnim.frameTime });
 			}
 		};
 
@@ -236,9 +251,24 @@ void ColliderSystem::RegisterHandlers() {
 	m_CollisionHandlers[GenerateCollisionKey(ColliderType::PlayerBox, ColliderType::EnemyBox)] = [this](Entity a, Entity b)
 		{
 			Enemy& enemyComp = m_World->GetComponent<Enemy>(b);
-			enemyComp.inPlayerKillRange = true;
-			if (enemyComp.isLethal) {
-				m_World->GetComponent<Player>(a).health = 0;
+			Player& playerComp = m_World->GetComponent<Player>(a);
+			if (playerComp.health > 0) enemyComp.inPlayerKillRange = true;
+			if (enemyComp.isLethal && playerComp.health > 0) {
+				playerComp.health = 0;
+				m_SoundManager->PlaySound("Pierced");
+
+				//Blood splatter
+				Entity blood = m_World->CreateEntity();
+				m_World->AddComponentToEntity<Transform>(blood, m_World->GetComponent<Transform>(a));
+				m_World->GetComponent<Transform>(blood).position += {-20, 20};
+				Renderable bloodRend{ {50,50} };
+				bloodRend.layer = RenderLayer::Player;
+				AnimationData bloodAnim;
+				bloodRend.flipX = true;
+				m_TextureManager->ChangeEntitySprite("Effects/Blood", bloodRend, bloodAnim);
+				m_World->AddComponentToEntity<Renderable>(blood, bloodRend);
+				m_World->AddComponentToEntity<AnimationData>(blood, bloodAnim);
+				m_World->AddComponentToEntity<Lifetime>(blood, { bloodAnim.totalFrames * bloodAnim.frameTime });
 			}
 		};
 
@@ -247,7 +277,6 @@ void ColliderSystem::RegisterHandlers() {
 	m_CollisionHandlers[GenerateCollisionKey(ColliderType::ObstacleBox, ColliderType::ProjectileBox)] = [this](Entity a, Entity b)
 		{
 			sf::FloatRect obstacleCollider{ m_World->GetComponent<Transform>(a).position , m_World->GetComponent<Renderable>(a).size };
-			//sf::FloatRect projectileCollider{ m_World->GetComponent<Transform>(b).position, m_World->GetComponent<Renderable>(b).size };
 			AABB obstacleAABB{ obstacleCollider.position, obstacleCollider.size };
 
 			Transform projectileTrans = m_World->GetComponent<Transform>(b);
@@ -318,6 +347,9 @@ void ColliderSystem::RegisterHandlers() {
 			//	float dotProd = proVelocity.x * collisionNormal.x + proVelocity.y * collisionNormal.y;
 			//	proVelocity -= 2.0f * dotProd * collisionNormal;
 			//}
+
+			//Call on collision function
+			if (m_World->GetComponent<Collider>(b).OnCollision != nullptr) m_World->GetComponent<Collider>(b).OnCollision(b);
 		};
 
 	//Obstacle -> Target Collision Logic
@@ -376,8 +408,25 @@ void ColliderSystem::RegisterHandlers() {
 	//Enemy -> Projectile Collision Logic
 	m_CollisionHandlers[GenerateCollisionKey(ColliderType::ProjectileBox, ColliderType::EnemyBox)] = [this](Entity proj, Entity enemy)
 		{
+			Collider& projCol = m_World->GetComponent<Collider>(proj);
+			if (projCol.isDanger) return; //Player targeting projectile
+
 			Enemy& enemyComp = m_World->GetComponent<Enemy>(enemy);
-			if (enemyComp.state == EnemyState::Guard) { //Add facing direction check later
+			Collider& enemyCollider = m_World->GetComponent<Collider>(enemy);
+			auto& [colShape, colOffset] = enemyCollider.entityColliders[0];
+
+			AABB enemyAABB{ std::get<sf::FloatRect>(colShape).position, std::get<sf::FloatRect>(colShape).size };
+			sf::CircleShape projCollider = std::get<sf::CircleShape>(m_World->GetComponent<Collider>(proj).entityColliders[0].first);
+
+			sf::Vector2f circleCenter = projCollider.getPosition() + sf::Vector2f(projCollider.getRadius(), projCollider.getRadius());
+
+			float closestX = std::clamp(circleCenter.x, enemyAABB.left(), enemyAABB.right());
+			float distLeft = std::abs(closestX - enemyAABB.left());
+			float distRight = std::abs(closestX - enemyAABB.right());
+
+			bool hitFacingSide = (enemyComp.isFacingRight && distRight < distLeft) || (!enemyComp.isFacingRight && distLeft < distRight);
+
+			if (enemyComp.state == EnemyState::Guard && hitFacingSide) { //Add facing direction check later
 				enemyComp.justDeflected = true;
 				Physics& projectilePhys = m_World->GetComponent<Physics>(proj);
 				projectilePhys.velocity = -projectilePhys.velocity;
@@ -396,12 +445,39 @@ void ColliderSystem::RegisterHandlers() {
 			}
 		};
 
-
 	//Target -> Projectile Collision Logic
 	m_CollisionHandlers[GenerateCollisionKey(ColliderType::TargetBox, ColliderType::ProjectileBox)] = [this](Entity a, Entity b)
 		{
 			m_World->GetComponent<Lifetime>(a).durability = 0;
 			m_World->GetComponent<Lifetime>(b).durability = 0;
+		};
+
+	//Enemy -> Platform Collision Logic
+	m_CollisionHandlers[GenerateCollisionKey(ColliderType::EnemyBox, ColliderType::PlatformBox)] = [this](Entity enemy, Entity plat)
+		{
+			auto& obstacleTrans = m_World->GetComponent<Transform>(plat);
+			auto& enemyTrans = m_World->GetComponent<Transform>(enemy);
+
+			auto& obstacleRenderable = m_World->GetComponent<Renderable>(plat);
+			auto& enemyRenderable = m_World->GetComponent<Renderable>(enemy);
+
+			auto& enemyPhysics = m_World->GetComponent<Physics>(enemy);
+			auto& enemyCollider = m_World->GetComponent<Collider>(enemy);
+
+			AABB obstacleAABB{ obstacleTrans.position, obstacleRenderable.size };
+			AABB enemyAABB{ enemyTrans.position,  enemyRenderable.size };
+
+			AABB overlap;
+			if (!AABBIntersect(obstacleAABB, enemyAABB, &overlap)) return;
+
+			// --- Vertical Collision ---
+			if (enemyAABB.top() < obstacleAABB.top() && std::abs(obstacleAABB.top() - enemyAABB.bottom()) <= 5
+				&& enemyPhysics.velocity.y >= 0 && !enemyCollider.phaseThroughPlatform) {
+				// Player hit obstacle from above
+				enemyTrans.position.y -= overlap.size.y - .1f;
+				enemyPhysics.isGrounded = true;
+				enemyPhysics.velocity.y = 0.f;
+			}
 		};
 }
 
@@ -420,4 +496,14 @@ bool ColliderSystem::AABBIntersect(const AABB& a, const AABB& b, AABB* outOverla
 		return true;
 	}
 	return false;
+}
+
+void ColliderSystem::SetTextureManager(TextureManager* textureManager) {
+	m_TextureManager = textureManager;
+	return;
+}
+
+void ColliderSystem::SetSoundManager(SoundManager* soundManager) {
+	m_SoundManager = soundManager;
+	return;
 }

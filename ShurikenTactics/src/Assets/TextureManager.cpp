@@ -38,7 +38,7 @@ void TextureManager::SetAnimationData(const std::string& filePath, AnimationData
 		animData.timeSinceLastFrame = newAnimData.frameTime;
 		animData.currentFrame = -1;
 
-		//Reset callbacks
+		//Clear animation events
 		animData.animationEvents.clear();
 		animData.OnAnimationEnd = nullptr;
 	}
@@ -117,7 +117,7 @@ void TextureManager::InitGameAnimationData() {
 	animData = AnimationData{};
 	animData.spriteSheetDim = { 8,1 };
 	animData.totalFrames = 8;
-	animData.frameTime = .15f;
+	animData.frameTime = .1f;
 	AddAnimationData("Samurai/Sprint", animData);
 
 	//Attack
@@ -143,6 +143,45 @@ void TextureManager::InitGameAnimationData() {
 	animData.frameTime = .2f;
 	animData.loopAnim = false;
 	AddAnimationData("Samurai/Guard", animData);
+
+	// --- Archer --- //
+
+	//Idle
+	animData = AnimationData{};
+	animData.spriteSheetDim = { 9,1 };
+	animData.totalFrames = 9;
+	animData.frameTime = .15f;
+	AddAnimationData("Archer/Idle", animData);
+
+	//Draw
+	animData = AnimationData{};
+	animData.spriteSheetDim = { 11,1 };
+	animData.totalFrames = 11;
+	animData.frameTime = .1f;
+	animData.loopAnim = false;
+	AddAnimationData("Archer/Draw", animData);
+
+	//Shot
+	animData = AnimationData{};
+	animData.spriteSheetDim = { 3,1 };
+	animData.totalFrames = 3;
+	animData.frameTime = .1f;
+	animData.loopAnim = false;
+	AddAnimationData("Archer/Shot", animData);
+
+	//Dead
+	animData.spriteSheetDim = { 5,1 };
+	animData.totalFrames = 5;
+	animData.frameTime = .15f;
+	animData.loopAnim = false;
+	AddAnimationData("Archer/Dead", animData);
+
+	//Arrow Break
+	animData.spriteSheetDim = { 3,1 };
+	animData.totalFrames = 3;
+	animData.frameTime = .05f;
+	animData.loopAnim = false;
+	AddAnimationData("Archer/Arrow_Break", animData);
 
 	// ********** Effects ********** //
 	animData = AnimationData{};

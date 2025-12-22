@@ -4,7 +4,7 @@
 #include <memory>
 #include <SFML/System/Vector2.hpp>
 #define TargetFixedUpdateFrequency 144
-#define GlobalVolumeSetting 10
+#define DefaultVolumeSetting 20
 
 using Entity = std::uint16_t;
 using ComponentID = size_t;
@@ -39,3 +39,7 @@ struct AABB {
     float top()    const { return pos.y; }
     float bottom() const { return pos.y + size.y; }
 };
+
+using SoundID = std::uint32_t;
+
+inline int GlobalVolumeLevel = DefaultVolumeSetting;

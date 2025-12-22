@@ -2,6 +2,7 @@
 #include <vector>
 #include <variant>
 #include <typeindex>
+#include <functional>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
 
@@ -23,7 +24,8 @@ struct Collider {
 	bool canPhaseThroughPlatform = false; //Set to false when standing on solid floors
 	bool phaseThroughPlatform = false;
 	int frameBuffer = 0;
-	bool isDanger = false; //To indicate danger towards player
+	bool isDanger = false; //To indicate danger towards player (if true, does not hit enemy)
+	std::function<void(Entity ent)> OnCollision = nullptr;
 
 	void AddRect(std::pair<sf::FloatRect, sf::Vector2f>collider) {
 		entityColliders.emplace_back(collider);

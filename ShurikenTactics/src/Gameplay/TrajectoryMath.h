@@ -17,4 +17,4 @@ std::vector<TrajectorySegment> ComputeTrajectory(
     int maxBounces        // number of predicted ricochets
 );
 
-bool HasLineOfSight(World& world, const sf::Vector2f& origin, const sf::Vector2f& target);
+bool HasLineOfSight(World& world, const sf::Vector2f& origin, const sf::Vector2f& target, float fovAngle, bool facingRight);

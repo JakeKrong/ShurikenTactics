@@ -240,9 +240,18 @@ std::vector<TrajectorySegment> ComputeTrajectory(
     return segments;
 }
 
-bool HasLineOfSight(World& world, const sf::Vector2f& origin, const sf::Vector2f& target)
+bool HasLineOfSight(World& world, const sf::Vector2f& origin, const sf::Vector2f& target, float fovAngle, bool facingRight)
 {
     sf::Vector2f dir = (target - origin).normalized();
+
+    float targetToOriginAngle = dir.angle().asDegrees();
+    
+    if (facingRight) {
+        if (std::abs(targetToOriginAngle) > fovAngle / 2 ) return false;
+    }
+    else {
+        if (std::abs(targetToOriginAngle) < 180 - (fovAngle / 2)) return false;
+    }
 
     float bestDist = std::numeric_limits<float>::infinity();
 

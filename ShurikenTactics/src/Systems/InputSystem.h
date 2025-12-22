@@ -16,6 +16,8 @@ struct PlayerInputIntent {
 	bool projectileReleased = false;
 
 	sf::Vector2i mousePos;
+
+	bool reset = false; //For debugging
 };
 
 class InputSystem :public ISystem {

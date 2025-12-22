@@ -3,6 +3,9 @@
 #include "Components.h"
 #include <cassert>
 
+//Test
+#include <print>
+
 namespace PrefabGen {
 	//Can consider using on World and TextureManager instead of Game later on
 	static Game* game = nullptr;
@@ -190,12 +193,15 @@ namespace PrefabGen {
 		lifetime.OnDestroyedFunction = onShurikenDestroyed;
 		world.AddComponentToEntity<Lifetime>(shuriken, lifetime);
 
+		game->GetSoundManager().PlaySound("Shuriken_Throw");
+		game->GetSoundManager().PlaySound("Shuriken_Slash");
+
 		return shuriken;
 	}
 
 	// ********** Enemy Prefabs ********** //
 
-	inline Entity Samurai(sf::Vector2f position){
+	inline Entity Samurai(sf::Vector2f position, bool defaultFaceRight){
 		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
 		World& world = game->GetWorld();
 
@@ -223,12 +229,15 @@ namespace PrefabGen {
 		Collider collider;
 		sf::FloatRect enemyHitbox;
 		enemyHitbox.position = { 400.0f,200.0f };
-		enemyHitbox.size = { 100, 130 };
-		collider.entityColliders.push_back({ enemyHitbox , {110,0} });
+		enemyHitbox.size = { 80, 130 };
+		collider.entityColliders.push_back({ enemyHitbox , {120,0} });
 		collider.type = ColliderType::EnemyBox;
 		world.AddComponentToEntity<Collider>(samurai, collider);
 
 		Enemy enemy;
+		enemy.origin = position;
+		enemy.defaultFacingRight = defaultFaceRight;
+		enemy.isFacingRight = defaultFaceRight;
 		world.AddComponentToEntity<Enemy>(samurai, enemy);
 
 		return samurai;
@@ -245,10 +254,14 @@ namespace PrefabGen {
 		world.AddComponentToEntity<Transform>(archer, transform);
 
 		Renderable renderable;
-		renderable.size = { 300, 130 };
+		renderable.size = { 300, 200 };
 		renderable.layer = RenderLayer::GameObject1;
 		renderable.texture = &game->GetTextureManager().Load("Archer/Idle");
-		world.AddComponentToEntity<AnimationData>(archer, { {6,1}, 6, 0.15f });
+		world.AddComponentToEntity<Renderable>(archer, renderable);
+
+		AnimationData animData;
+		game->GetTextureManager().SetAnimationData("Archer/Idle", animData);
+		world.AddComponentToEntity<AnimationData>(archer, animData);
 
 		Physics enemyPhy;
 		enemyPhy.affectedByGravity = true;
@@ -259,11 +272,72 @@ namespace PrefabGen {
 		sf::FloatRect enemyHitbox;
 		enemyHitbox.position = { 400.0f,200.0f };
 		enemyHitbox.size = { 100, 130 };
-		collider.entityColliders.push_back({ enemyHitbox , {110,0} });
-		collider.type = ColliderType::PlayerBox;
+		collider.entityColliders.push_back({ enemyHitbox , {100,70} });
+		collider.type = ColliderType::EnemyBox;
 		world.AddComponentToEntity<Collider>(archer, collider);
 
+		Enemy enemy;
+		enemy.type = EnemyType::Archer;
+		enemy.fovAngle = 120;
+		world.AddComponentToEntity<Enemy>(archer, enemy);
+
 		return archer;
+	}
+
+	inline Entity Arrow() {
+		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
+		World& world = game->GetWorld();
+
+		Entity arrow = world.CreateEntity();
+
+		Transform transform;
+		world.AddComponentToEntity<Transform>(arrow, transform);
+
+		Renderable renderable;
+		renderable.size = { 50, 5 };
+		renderable.layer = RenderLayer::GameObject1;
+		renderable.texture = &game->GetTextureManager().Load("Archer/Arrow");
+		world.AddComponentToEntity<Renderable>(arrow, renderable);
+
+		Collider collider;
+		sf::FloatRect arrowHitbox{ { 50, 5 }, {} };
+		collider.entityColliders.push_back({ arrowHitbox , {} });
+		collider.type = ColliderType::ProjectileBox;
+		world.AddComponentToEntity<Collider>(arrow, collider);
+
+		Physics physics;
+		world.AddComponentToEntity<Physics>(arrow, physics);
+
+		//std::function<void(Entity ent)> onArrowDestroyed = [&](Entity arrow) {
+		//	World& world = game->GetWorld();
+
+		//	Entity destroyEffect = world.CreateEntity();
+		//	world.AddComponentToEntity<Transform>(destroyEffect, world.GetComponent<Transform>(arrow));
+
+		//	Renderable renderable;
+		//	renderable.size = { 30.0f, 30.0f };
+		//	renderable.layer = RenderLayer::GameObject1;
+		//	renderable.texture = &game->GetTextureManager().Load("Shuriken_Break");
+		//	world.AddComponentToEntity<Renderable>(destroyEffect, renderable);
+
+		//	AnimationData animationData;
+		//	animationData.spriteSheetDim = { 3,1 };
+		//	animationData.totalFrames = 3;
+		//	animationData.frameTime = 0.05f;
+		//	world.AddComponentToEntity<AnimationData>(destroyEffect, animationData);
+
+		//	Lifetime lifetime;
+		//	lifetime.remainingTime = animationData.frameTime * animationData.totalFrames;
+		//	world.AddComponentToEntity<Lifetime>(destroyEffect, lifetime);
+
+		//	};
+
+		Lifetime lifetime;
+		lifetime.durability = 1;
+		//lifetime.OnDestroyedFunction = onArrowDestroyed;
+		world.AddComponentToEntity<Lifetime>(arrow, lifetime);
+
+		return arrow;
 	}
 
 

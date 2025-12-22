@@ -57,6 +57,8 @@ void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime
 			renderable.setOrigin({ renderable.getOrigin().x + renderComp.size.x, renderable.getOrigin().y });
 		}
 
+		if (renderComp.transformFunction != nullptr) renderComp.transformFunction();
+
 		renderWindow.draw(renderable);
 	}
 

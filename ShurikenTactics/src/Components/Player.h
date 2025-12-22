@@ -2,9 +2,8 @@
 
 enum PlayerState {
 	Idle,
-	WalkingLeft,
-	WalkingRight,
-	Jumping,
+	Walking,
+	Airborne,
 	Aiming,
 	Throwing,
 	Dead
@@ -17,4 +16,5 @@ struct Player {
 
 	float movementSpeed = 20.0f;
 	float jumpForce = 1000.f;
+	PlayerState playerState = PlayerState::Idle;
 };

@@ -23,7 +23,7 @@ struct Renderable {
 	bool visible{ true };
 	bool flipX = false;
 	sf::Color tint = sf::Color::White;
-	std::function<void(Transform&)> transformFunction{}; //For transform related display mods (rotation, shaking, etc...)
+	std::function<void()> transformFunction = nullptr; //For transform related display mods (rotation, shaking, etc...)
 };
 
 struct AnimationData {

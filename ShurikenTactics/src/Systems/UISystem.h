@@ -5,6 +5,8 @@
 class UISystem : public ISystem{
 public:
 	void HandleEvents(const sf::Event& event, const sf::Vector2f& mousePos);
+
+	void Update(sf::Vector2f mousePos);
 private:
 
 };
