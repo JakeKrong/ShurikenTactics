@@ -25,7 +25,7 @@ public:
 
 	virtual void SetWorld(World* world) {
 		m_World = world;
-		std::println("[{} System] -> World Set!", typeid(*this).name());
+		//std::println("[{} System] -> World Set!", typeid(*this).name());
 	}
 protected:
 	std::vector<Entity> m_Entities;

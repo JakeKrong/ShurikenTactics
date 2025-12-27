@@ -100,7 +100,7 @@ void PlayingState::Enter() {
 }
 
 void PlayingState::Exit() {
-	std::println("[PlayingState] Exiting...");
+	//std::println("[PlayingState] Exiting...");
 
 	m_RenderSystem.reset();
 	m_InputSystem.reset();
@@ -173,9 +173,9 @@ void PlayingState::UpdatePlayerState(sf::RenderWindow& renderWindow) {
 
 	World& world = m_Game->GetWorld();
 
-	if (input.reset) {
-		m_Game->m_StateManager.EnqueueStateChange(CreateScope<PlayingState>(m_Game));
-	}
+	//if (input.reset) {
+	//	m_Game->m_StateManager.EnqueueStateChange(CreateScope<PlayingState>(m_Game));
+	//}
 
 	if (input.pause) {
 		m_GamePaused = true;

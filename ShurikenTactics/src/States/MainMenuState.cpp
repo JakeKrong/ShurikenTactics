@@ -109,7 +109,7 @@ void MainMenuState::Enter() {  //Initialise Main Menu
 }
 
 void MainMenuState::Exit() {
-	std::println("[MainMenuState] Exiting...");
+	//std::println("[MainMenuState] Exiting...");
 	m_RenderSystem.reset();
 	m_UISystem.reset();
 	//m_Game->m_SoundManager.StopAll();

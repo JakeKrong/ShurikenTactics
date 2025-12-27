@@ -1,5 +1,4 @@
 #include "World.h"
-#include <print>
 
 World::World() :
 	m_EntityManager(CreateScope<EntityManager>()),
