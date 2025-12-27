@@ -7,7 +7,7 @@ class TextureManager {
 public:
 	sf::Texture& Load(const std::string& filePath);
 
-	void ChangeEntitySprite(const std::string& textureName, Renderable& renderable, AnimationData& anim);
+	bool ChangeEntitySprite(const std::string& textureName, Renderable& renderable, AnimationData& anim);
 
 	void AddAnimationData(const std::string& filePath, AnimationData& animData);
 	void SetAnimationData(const std::string& filePath, AnimationData& animData);

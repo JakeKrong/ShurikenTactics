@@ -3,7 +3,9 @@
 #include <SFML/System/Vector2.hpp>
 #include<SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Texture.hpp>
+#include <SFML/Graphics/Text.hpp>
 #include "Transform.h"
+#include <optional>
 
 //const float DEFAULT_SIZE = 30.0f;
 //sf::Color DEFAULT_COLOR{ sf::Color::White };
@@ -23,6 +25,7 @@ struct Renderable {
 	bool visible{ true };
 	bool flipX = false;
 	sf::Color tint = sf::Color::White;
+	std::optional<sf::Text> text;
 	std::function<void()> transformFunction = nullptr; //For transform related display mods (rotation, shaking, etc...)
 };
 

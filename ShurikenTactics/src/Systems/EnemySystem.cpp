@@ -44,6 +44,9 @@ void EnemySystem::Update(const float& deltaTime) {
 		case(EnemyState::Patrol):
 			//Update
 			break;
+		case(EnemyState::Dead):
+			UpdateDead(ent);
+			break;
 		case(EnemyState::Alerted):
 			UpdateAlert(ent);
 			break;
@@ -54,14 +57,10 @@ void EnemySystem::Update(const float& deltaTime) {
 			UpdateDraw(ent);
 			break;
 		case (EnemyState::Guard):
-		case (EnemyState::Deflect):
 			UpdateGuard(ent);
 			break;
 		case(EnemyState::Attack):
 			UpdateAttack(ent);
-			break;
-		case(EnemyState::Dead):
-			UpdateDead(ent);
 			break;
 		}
 
@@ -82,11 +81,14 @@ void EnemySystem::UpdateIdle(Entity enemyEnt) {
 		Collider& enemyCol = m_World->GetComponent<Collider>(enemyEnt);
 		sf::FloatRect mainEnemyCol = std::get<sf::FloatRect>(enemyCol.entityColliders[0].first);
 
-		//CHANGE THIS: USE LIVE PLAYER CORDS NOT LAST SEEN
-		bool playerRightOfEnemy = enemyComp.lastSeenPlayerCoords.x > mainEnemyCol.getCenter().x;
+		Collider& playerCol = m_World->GetComponent<Collider>(playerEnt);
+		sf::FloatRect mainPlayerCol = std::get<sf::FloatRect>(playerCol.entityColliders[0].first);
+
+		bool playerRightOfEnemy = mainPlayerCol.getCenter().x > mainEnemyCol.getCenter().x;
 		if (playerRightOfEnemy != enemyComp.isFacingRight) TurnEnemy(enemyEnt);
 
-		float newStateChangeCd = .7f;
+		float newStateChangeCd;
+		enemyComp.type == EnemyType::Samurai ? newStateChangeCd = .7f : newStateChangeCd = .4f;
 		enemyComp.stateChangeCd = newStateChangeCd;
 		enemyComp.state = EnemyState::Alerted;
 		
@@ -107,6 +109,8 @@ void EnemySystem::UpdateAlert(Entity enemyEnt) {
 	Transform& enemyTrans = m_World->GetComponent<Transform>(enemyEnt);
 	Enemy& enemyComp = m_World->GetComponent<Enemy>(enemyEnt);
 	Physics& enemyPhys = m_World->GetComponent<Physics>(enemyEnt);
+
+	PlayerInLOS(enemyEnt);
 	
 	if (enemyComp.stateChangeCd <= 0) {
 		auto playerDataVect = m_World->GetAllComponentsOfType<Player>();
@@ -115,7 +119,7 @@ void EnemySystem::UpdateAlert(Entity enemyEnt) {
 		if (PlayerInLOS(enemyEnt)) {
 			if (enemyComp.type == EnemyType::Samurai) {
 				enemyPhys.velocity.x = 0;
-				if (HasWalkablePath(enemyEnt) && m_World->GetComponent<Player>(playerDataVect[0].first).playerState != Aiming) {
+				if (HasWalkablePath(enemyEnt) && m_World->GetComponent<Player>(playerDataVect[0].first).playerState != PlayerState::ReadyToShoot) {
 					enemyComp.state = EnemyState::Chase;
 				}
 				else {
@@ -124,7 +128,8 @@ void EnemySystem::UpdateAlert(Entity enemyEnt) {
 						m_World->GetComponent<AnimationData>(enemyEnt));
 					enemyComp.stateChangeCd = 2;
 					m_SoundManager->PlaySound("Samurai/Maere");
-					bool playerRightOfEnemy = enemyComp.lastSeenPlayerCoords.x > enemyTrans.position.x;
+					sf::FloatRect mainEnemyCol = std::get<sf::FloatRect>(m_World->GetComponent<Collider>(enemyEnt).entityColliders[0].first);
+					bool playerRightOfEnemy = enemyComp.lastSeenPlayerCoords.x > mainEnemyCol.getCenter().x;
 					if (playerRightOfEnemy != enemyComp.isFacingRight) TurnEnemy(enemyEnt);
 				}
 			}
@@ -136,7 +141,7 @@ void EnemySystem::UpdateAlert(Entity enemyEnt) {
 			Renderable& enemyRend = m_World->GetComponent<Renderable>(enemyEnt);
 			AnimationData& enemyAnim = m_World->GetComponent<AnimationData>(enemyEnt);
 			if (enemyComp.type == EnemyType::Samurai) {
-				if (enemyTrans.position.x != enemyComp.origin.x) {
+				if (std::abs(enemyTrans.position.x - enemyComp.origin.x) > 1) {
 					if (enemyPhys.velocity.x == 0) {
 						m_TextureManager->ChangeEntitySprite("Samurai/Sprint", enemyRend, enemyAnim);
 						bool originRightOfEnemy;
@@ -161,6 +166,7 @@ void EnemySystem::UpdateAlert(Entity enemyEnt) {
 			else {
 				enemyComp.state = EnemyState::Idle;
 				m_TextureManager->ChangeEntitySprite("Archer/Idle", enemyRend, enemyAnim);
+				if (enemyComp.isFacingRight != enemyComp.defaultFacingRight) TurnEnemy(enemyEnt);
 			}
 		}
 	}
@@ -188,14 +194,14 @@ void EnemySystem::UpdateChase(Entity enemyEnt) {
 	bool hasLOS = PlayerInLOS(enemyEnt);
 
 	// If not the same y-level
-	if (!hasLOS || std::abs(enemyComp.lastSeenPlayerGroundedCoords.y - (enemRectCol.position.y + enemRectCol.size.y)) > 2 ||
-		std::abs(enemyComp.lastSeenPlayerGroundedCoords.x - enemRectCol.getCenter().x) < 2) {
+	if (!hasLOS || std::abs(enemyComp.lastSeenPlayerGroundedCoords.y - (enemRectCol.position.y + enemRectCol.size.y)) > 3 ||
+		std::abs(enemyComp.lastSeenPlayerGroundedCoords.x - enemRectCol.getCenter().x) < 3) {
 		enemyPhys.velocity.x = 0;
 		enemyComp.state = EnemyState::Alerted;
 		enemyComp.stateChangeCd = 0.3;
 		m_TextureManager->ChangeEntitySprite("Samurai/Idle", enemyRend, enemyAnim);
 	}
-	else if (m_World->GetAllComponentsOfType<Player>()[0].second->playerState == PlayerState::Aiming) {
+	else if (m_World->GetAllComponentsOfType<Player>()[0].second->playerState == PlayerState::ReadyToShoot) {
 		enemyPhys.velocity.x = 0;
 		enemyComp.state = EnemyState::Guard;
 		m_TextureManager->ChangeEntitySprite("Samurai/Guard", enemyRend, enemyAnim);
@@ -238,7 +244,7 @@ void EnemySystem::UpdateGuard(Entity enemyEnt) {
 				enemyComp.state = EnemyState::Alerted;
 				m_TextureManager->ChangeEntitySprite("Samurai/Idle", m_World->GetComponent<Renderable>(enemyEnt), m_World->GetComponent<AnimationData>(enemyEnt));
 			}
-			else if (HasWalkablePath(enemyEnt) && playerComp.playerState != PlayerState::Aiming) {
+			else if (HasWalkablePath(enemyEnt) && playerComp.playerState != PlayerState::ReadyToShoot) {
 				enemyComp.state = EnemyState::Chase;
 				m_SoundManager->PlaySound("Samurai/Yukuzo");
 			}
@@ -248,10 +254,11 @@ void EnemySystem::UpdateGuard(Entity enemyEnt) {
 
 				sf::FloatRect mainEnemyCol = std::get<sf::FloatRect>(m_World->GetComponent<Collider>(enemyEnt).entityColliders[0].first);
 				bool playerRightOfEnemy = enemyComp.lastSeenPlayerCoords.x > mainEnemyCol.getCenter().x;
-				if (playerRightOfEnemy != enemyComp.isFacingRight) TurnEnemy(enemyEnt);
+				if (playerRightOfEnemy != enemyComp.isFacingRight && 
+					std::abs(enemyComp.lastSeenPlayerCoords.x - mainEnemyCol.getCenter().x) > 10) TurnEnemy(enemyEnt);
 			}
 		}
-		else if (hasLos && playerComp.playerState == PlayerState::Aiming) {
+		else if (hasLos && playerComp.playerState == PlayerState::ReadyToShoot) {
 			enemyComp.stateChangeCd = 1.5;
 		}
 	}
@@ -261,20 +268,35 @@ void EnemySystem::UpdateAttack(Entity enemyEnt) {
 	Renderable& enemyRend = m_World->GetComponent<Renderable>(enemyEnt);
 
 	//If not already attacking, initiate attack sequence
-	if (enemyRend.texture != &m_TextureManager->Load("Samurai/Attack")) {
+	if (enemyRend.texture != &m_TextureManager->Load("Samurai/Attack") ||
+		enemyRend.texture != &m_TextureManager->Load("Archer/Attack")) {
 		Enemy& enemyComp = m_World->GetComponent<Enemy>(enemyEnt);
 		AnimationData& enemyAnim = m_World->GetComponent<AnimationData>(enemyEnt);
 		Physics& enemyPhys = m_World->GetComponent<Physics>(enemyEnt);
 
-		m_TextureManager->ChangeEntitySprite("Samurai/Attack", enemyRend, enemyAnim);
-		enemyComp.stateChangeCd = 0;
-		enemyAnim.animationEvents.insert({ 2, [&]() { m_SoundManager->PlaySound("Samurai/Sword_Slash");} });
-		enemyAnim.animationEvents.insert({ 3, [&]() { enemyComp.isLethal = true; } });
-		enemyAnim.OnAnimationEnd = [&]() { 
-			enemyComp.isLethal = false; 
-			enemyComp.state = EnemyState::Alerted;
-			m_TextureManager->ChangeEntitySprite("Samurai/Guard", enemyRend, enemyAnim);
-		};
+		if (enemyComp.type == EnemyType::Samurai) {
+			m_TextureManager->ChangeEntitySprite("Samurai/Attack", enemyRend, enemyAnim);
+			enemyComp.stateChangeCd = 0;
+			enemyAnim.animationEvents.insert({ 2, [&]() { m_SoundManager->PlaySound("Samurai/Sword_Slash"); } });
+			enemyAnim.animationEvents.insert({ 3, [&]() { enemyComp.isLethal = true; } });
+			enemyAnim.OnAnimationEnd = [&]() {
+				enemyComp.isLethal = false;
+				enemyComp.state = EnemyState::Alerted;
+				m_TextureManager->ChangeEntitySprite("Samurai/Guard", enemyRend, enemyAnim);
+				};
+		}
+		else if (enemyComp.type == EnemyType::Archer) {
+			m_TextureManager->ChangeEntitySprite("Archer/Attack", enemyRend, enemyAnim);
+			enemyComp.stateChangeCd = 0;
+			enemyAnim.animationEvents.insert({ 3, [&]() { m_SoundManager->PlaySound("Samurai/Sword_Slash"); } });
+			enemyAnim.animationEvents.insert({ 4, [&]() { enemyComp.isLethal = true; } });
+			enemyAnim.OnAnimationEnd = [&]() {
+				enemyComp.isLethal = false;
+				enemyComp.state = EnemyState::Alerted;
+				m_TextureManager->ChangeEntitySprite("Archer/Idle", enemyRend, enemyAnim);
+				};
+		}
+
 		enemyPhys.velocity.x = 0;
 	}
 }
@@ -294,7 +316,7 @@ void EnemySystem::UpdateDraw(Entity enemyEnt) {
 		m_TextureManager->ChangeEntitySprite("Archer/Draw", enemyRend, enemyAnim);
 		enemyAnim.animationEvents.insert({ 7, [&]() {m_SoundManager->PlaySound("Archer/Draw_Bow"); } });
 
-		enemyComp.stateChangeCd = 2; //Draw bow to fire delay interval
+		enemyComp.stateChangeCd = 1.35; //Draw bow to fire delay interval
 
 		//Create arrow preview
 		PreviewArrow(enemyEnt);
@@ -303,7 +325,7 @@ void EnemySystem::UpdateDraw(Entity enemyEnt) {
 		if (enemyRend.texture == &m_TextureManager->Load("Archer/Draw")) {
 			m_SoundManager->PlaySound("Archer/Shoot_Arrow");
 			m_TextureManager->ChangeEntitySprite("Archer/Shot", enemyRend, enemyAnim);
-			enemyComp.stateChangeCd = 1.5; //Delay after shot to state reset
+			enemyComp.stateChangeCd = 1.0; //Delay after shot to state reset
 			FireArrow(enemyEnt);
 		}
 		else if (enemyRend.texture == &m_TextureManager->Load("Archer/Shot")) {
@@ -313,8 +335,8 @@ void EnemySystem::UpdateDraw(Entity enemyEnt) {
 			}
 			else { //Draw again
 				m_TextureManager->ChangeEntitySprite("Archer/Draw", m_World->GetComponent<Renderable>(enemyEnt), m_World->GetComponent<AnimationData>(enemyEnt));
-				enemyAnim.animationEvents.insert({ 7, [&]() {m_SoundManager->PlaySound("Archer/Draw_Bow"); } });
-				enemyComp.stateChangeCd = 2;
+				enemyAnim.animationEvents.insert({ 6, [&]() {m_SoundManager->PlaySound("Archer/Draw_Bow"); } });
+				enemyComp.stateChangeCd = 1.35;
 			}
 		}
 	}
@@ -347,6 +369,7 @@ void EnemySystem::UpdateDead(Entity enemyEnt) {
 	Renderable bloodRend{ {100,100} };
 	AnimationData bloodAnim;
 	bloodRend.flipX = true;
+	bloodRend.layer = RenderLayer::GameObject1;
 	m_TextureManager->ChangeEntitySprite("Effects/Blood", bloodRend, bloodAnim);
 	m_World->AddComponentToEntity<Renderable>(blood, bloodRend);
 	m_World->AddComponentToEntity<AnimationData>(blood, bloodAnim);
@@ -376,18 +399,17 @@ bool EnemySystem::PlayerInLOS(Entity enemyEnt) {
 	sf::Vector2f losOrigin = { {mainEnemyCol.position.x + mainEnemyCol.size.x / 2},
 							   {mainEnemyCol.position.y + mainEnemyCol.size.y / 5} };
 
-	float fovAngle;
-	if (enemyComp.state >= EnemyState::Alerted) {
-		if (enemyComp.type == EnemyType::Samurai) fovAngle = 360;
-		else fovAngle = 180;
-	}
-	else fovAngle = enemyComp.fovAngle;
+	//float fovAngle;
+	//if (enemyComp.state >= EnemyState::Alerted) {
+	//	fovAngle = 270;
+	//}
+	//else fovAngle = enemyComp.fovAngle;
 
-	bool hasLOS = HasLineOfSight(*m_World, losOrigin, losTarget, fovAngle, enemyComp.isFacingRight);
+	bool hasLOS = HasLineOfSight(*m_World, losOrigin, losTarget, enemyComp.fovAngle, enemyComp.isFacingRight);
 	if (hasLOS) {
 		enemyComp.lastSeenPlayerCoords = losTarget;
 		if (m_World->GetComponent<Physics>(playerEnt).isGrounded) {
-			enemyComp.lastSeenPlayerGroundedCoords = { {mainPlayerCol.position.x + mainPlayerCol.size.x / 2},
+			enemyComp.lastSeenPlayerGroundedCoords = { {mainPlayerCol.position.x + (mainPlayerCol.size.x / 2)},
 													   {mainPlayerCol.position.y + mainPlayerCol.size.y} };
 		}
 	}
@@ -406,9 +428,8 @@ bool EnemySystem::HasWalkablePath(Entity enemyEnt) {
 	//Get approximate enemy's foot-level
 	sf::Vector2f losOrigin = { {mainEnemyCol.position.x + mainEnemyCol.size.x / 2},
 							   {mainEnemyCol.position.y + mainEnemyCol.size.y - 5} };
-
 	//Check if same y-level (return false if not)
-	if (std::abs(losTarget.y - losOrigin.y) > 2) return false;
+	if (std::abs(losTarget.y - losOrigin.y) > 3) return false;
 
 	//Check if there's walkable path (no obstacles) based on enemy and players approximate foot y-level
 	bool hasLOS = HasLineOfSight(*m_World, losOrigin, losTarget, enemyComp.fovAngle, enemyComp.isFacingRight);
@@ -482,7 +503,7 @@ void EnemySystem::FireArrow(Entity enemyEnt) {
 	m_World->AddComponentToEntity<Collider>(arrow, collider);
 
 	Physics physics;
-	physics.velocity = { normalizedDir.x * 1500, normalizedDir.y * 1500 };
+	physics.velocity = { normalizedDir.x * 1700, normalizedDir.y * 1700 };
 	m_World->AddComponentToEntity<Physics>(arrow, physics);
 
 	Lifetime lifetime;
@@ -520,14 +541,16 @@ void EnemySystem::TurnEnemy(Entity enemyEnt, bool syncDir) {
 	}
 }
 
-
 void EnemySystem::SetTextureManager(TextureManager* textureManager) {
 	m_TextureManager = textureManager;
 	return;
 }
 
-
 void EnemySystem::SetSoundManager(SoundManager* soundManager) {
 	m_SoundManager = soundManager;
 	return;
+}
+
+int EnemySystem::getEnemyCount() {
+	return m_Entities.size();
 }

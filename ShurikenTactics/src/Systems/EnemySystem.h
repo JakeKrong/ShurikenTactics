@@ -24,6 +24,8 @@ public:
 	void TurnEnemy(Entity enemyEnt, bool syncDir = false);
 	void SetTextureManager(TextureManager* tm);
 	void SetSoundManager(SoundManager* sm);
+
+	int getEnemyCount();
 	
 private:
 	TextureManager* m_TextureManager = nullptr;

@@ -393,14 +393,34 @@ void ColliderSystem::RegisterHandlers() {
 
 			AABB overlap;
 			if (!AABBIntersect(obstacleAABB, enemyAABB, &overlap)) return;
-			if (enemyAABB.top() < obstacleAABB.top()) {
-				enemyTrans.position.y -= overlap.size.y;
-				m_World->GetComponent<Physics>(enemy).isGrounded = true;
+
+			// Determine the axis to resolve on.
+			bool resolveX = overlap.size.x < overlap.size.y;
+
+			auto& enemyPhys = m_World->GetComponent<Physics>(enemy);
+
+			if (resolveX) {
+				// --- Horizontal Collision ---
+				if (enemyAABB.left() < obstacleAABB.left()) {
+					enemyTrans.position.x -= overlap.size.x; // Push Left
+				}
+				else {
+					enemyTrans.position.x += overlap.size.x; // Push Right
+				}
+				enemyPhys.velocity.x = 0.f;
 			}
 			else {
-				// player hit obstacle from below
-				enemyTrans.position.y += overlap.size.y;
+				// --- Vertical Collision ---
+				if (enemyAABB.top() < obstacleAABB.top()) {
+					enemyTrans.position.y -= overlap.size.y;
+					m_World->GetComponent<Physics>(enemy).isGrounded = true;
+				}
+				else {
+					// enemy hit obstacle from below
+					enemyTrans.position.y += overlap.size.y;
+				}
 			}
+
 			// zero vertical velocity
 			m_World->GetComponent<Physics>(enemy).velocity.y = 0.f;
 		};

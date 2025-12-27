@@ -13,10 +13,12 @@ struct PlayerInputIntent {
 	bool dropDown = false;
 
 	bool isAiming = false;
+	bool readyToShoot = false;
 	bool projectileReleased = false;
 
 	sf::Vector2i mousePos;
 
+	bool pause = false;
 	bool reset = false; //For debugging
 };
 
@@ -26,6 +28,7 @@ public:
 	void HandleEvents(const sf::Event& event);
 
 	void SetKeyboardDisabled(bool);
+	void SetMouseDisabled(bool);
 	void SetWindowFocused(bool);
 
 	const PlayerInputIntent& GetIntent() const { return m_Intent; }
@@ -38,6 +41,7 @@ private:
 	bool m_D_KeyPressed{ false };
 	bool m_W_KeyPressed{ false };
 	bool m_S_KeyPressed{ false };
+	bool m_R_KeyPressed{ false };
 
 	bool m_MouseLeftClicked{ false };
 	bool m_MouseLeftHeld{ false };
@@ -45,8 +49,8 @@ private:
 
 	sf::Vector2i m_MousePosition{ 0, 0 };
 
-	bool m_MouseDisabled{ false };
-	bool m_KeyboardDisabled{ false };
+	bool m_MouseDisabled{ true };
+	bool m_KeyboardDisabled{ true };
 	bool m_WindowFocused{ true };
 	//bool m_UiMode{ false };
 };

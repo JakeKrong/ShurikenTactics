@@ -5,6 +5,7 @@ enum PlayerState {
 	Walking,
 	Airborne,
 	Aiming,
+	ReadyToShoot,
 	Throwing,
 	Dead
 };

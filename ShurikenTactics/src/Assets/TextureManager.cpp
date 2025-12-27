@@ -17,11 +17,11 @@ sf::Texture& TextureManager::Load(const std::string& filePath) {
 	return m_TextureMap[filePath] = std::move(texture);
 }
 
-void TextureManager::ChangeEntitySprite(const std::string& textureName, Renderable& renderable, AnimationData& anim) {
-	if (renderable.texture == &this->Load(textureName)) return;
+bool TextureManager::ChangeEntitySprite(const std::string& textureName, Renderable& renderable, AnimationData& anim) {
+	if (renderable.texture == &this->Load(textureName)) return false;
 	renderable.texture = &this->Load(textureName);
 	SetAnimationData(textureName, anim);
-	return;
+	return true;
 }
 
 void TextureManager::AddAnimationData(const std::string& filePath, AnimationData& animData) {
@@ -71,6 +71,20 @@ void TextureManager::InitGameAnimationData() {
 	animData.totalFrames = 6;
 	animData.frameTime = 0.15f;
 	AddAnimationData("Player_Sprint_Sprite", animData);
+
+	// Shuriken aiming
+	animData = AnimationData{};
+	animData.spriteSheetDim = { 2,1 };
+	animData.totalFrames = 2;
+	animData.frameTime = 0.2f;
+	AddAnimationData("Player_Aiming", animData);
+
+	// Shuriken aim ready
+	animData = AnimationData{};
+	animData.spriteSheetDim = { 2,1 };
+	animData.totalFrames = 2;
+	animData.frameTime = 0.3f;
+	AddAnimationData("Player_Aim_Ready", animData);
 
 	// Shuriken throw
 	animData = AnimationData{};
@@ -168,6 +182,14 @@ void TextureManager::InitGameAnimationData() {
 	animData.frameTime = .1f;
 	animData.loopAnim = false;
 	AddAnimationData("Archer/Shot", animData);
+
+	//Attack
+	animData = AnimationData{};
+	animData.spriteSheetDim = { 5,1 };
+	animData.totalFrames = 5;
+	animData.frameTime = .1f;
+	animData.loopAnim = false;
+	AddAnimationData("Archer/Attack", animData);
 
 	//Dead
 	animData.spriteSheetDim = { 5,1 };

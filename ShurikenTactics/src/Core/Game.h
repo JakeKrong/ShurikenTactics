@@ -21,6 +21,7 @@ public:
 	
 	TextureManager& GetTextureManager();
 	SoundManager& GetSoundManager();
+	FontManager& GetFontManager();
 
 private:
 	sf::RenderWindow m_Window;

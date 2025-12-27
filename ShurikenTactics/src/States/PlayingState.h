@@ -8,21 +8,27 @@
 #include "PhysicsSystem.h"
 #include "LifetimeSystem.h"
 #include "EnemySystem.h"
+#include "UISystem.h"
 
 class PlayingState : public IState {
 public:
-	PlayingState(Game* game);
+	PlayingState(Game* game, int level = 1);
 	void Enter() override;
 	void Exit() override;
 	void Update(sf::RenderWindow&, const float& deltaTime) override;
-	void Render(sf::RenderWindow&, const float&) override;
+	void Render(sf::RenderWindow&, float) override;
 	void HandleEvents(const sf::Event& event) override;
 
 	// Gameplay Functions
 	void UpdatePlayerState(sf::RenderWindow&);
 	void ThrowShuriken(sf::RenderWindow&, sf::Vector2f);
 	void SpawnTarget();
+
+	void SetInputDisabled(bool);
+	void PauseGame();
+	void EndGame(bool);
 	void EnqueueGameOver();
+	void NextStage();
 
 private:
 	Game* m_Game;
@@ -34,5 +40,15 @@ private:
 	Ref<LifetimeSystem> m_LifetimeSystem;
 	Ref<EnemySystem> m_EnemySystem;
 
-	float shurikenCD{0.0f}; //Consider change
+	Ref<UISystem> m_UISystem;
+
+	float shurikenCD{ 0.0f }; //Consider change
+
+	bool m_GamePaused{ false };
+	bool m_SwitchingStage{ false };
+	float m_GameOverCnt{ -1 };
+	float m_NextStageCnt{ -1 };
+
+	int m_CurrGameLevel{1};
+	int m_TotalStages = 3;
 };

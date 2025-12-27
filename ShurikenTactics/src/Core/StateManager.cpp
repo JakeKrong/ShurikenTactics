@@ -1,11 +1,13 @@
 #include "StateManager.h"
 
 void StateManager::Update(const float deltaTime, sf::RenderWindow& renderWindow) {
-	m_CurrentState->Update(renderWindow, deltaTime);
-
 	if (m_IsPendingStateChange) {
 		ChangeState(std::move(m_PendingState));
 		m_IsPendingStateChange = false;
+	}
+
+	if (m_CurrentState) {
+		m_CurrentState->Update(renderWindow, deltaTime);
 	}
 }
 

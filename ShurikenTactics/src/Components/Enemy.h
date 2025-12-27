@@ -11,7 +11,6 @@ enum class EnemyState {
 	Shoot,
 	//Samurai
 	Guard,
-	Deflect,
 	Attack
 };
 
@@ -25,7 +24,7 @@ struct Enemy {
 	EnemyType type = EnemyType::Samurai; 
 	EnemyState state = EnemyState::Idle;
 	bool isFacingRight = true;
-	int fovAngle = 90;
+	int fovAngle = 140;
 
 	sf::Vector2f origin{};
 	bool defaultFacingRight = true;

@@ -16,7 +16,7 @@ void UISystem::HandleEvents(const sf::Event& event, const sf::Vector2f& mousePos
 				sf::FloatRect buttonArea{ {transComp.position}, {buttonComp.size} };
 				sf::IntRect clickArea{ (sf::Vector2i)mousePos, {1, 1}};
 				if (buttonArea.findIntersection((sf::FloatRect)clickArea)) {
-					buttonComp.onButtonClick();
+					if (buttonComp.onButtonClick && buttonComp.isEnabled) buttonComp.onButtonClick();
 					buttonComp.buttonHeld = true;
 					break;
 				}
@@ -37,6 +37,7 @@ void UISystem::Update(sf::Vector2f mousePos) {
 	if (!m_World) return;
 	for (auto& ent : m_Entities) {
 		Button& buttonComp = m_World->GetComponent<Button>(ent);
+		if (!buttonComp.isEnabled) continue;
 		if (buttonComp.buttonHeld && buttonComp.onButtonHeld) {
 			buttonComp.onButtonHeld(mousePos);
 		}

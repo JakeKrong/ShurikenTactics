@@ -8,5 +8,5 @@ public:
 	sf::Font& Load(const std::string& fontName);
 private:
 	std::unordered_map<std::string, sf::Font> m_FontMap;
-	std::string fontBasePath{ "C:/Windows/Fonts/" };
+	std::string fontBasePath{ "../../../../ShurikenTactics/assets/font/" };
 };

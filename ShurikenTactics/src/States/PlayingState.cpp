@@ -3,6 +3,7 @@
 #include "Components.h"
 #include "Prefabs.h"
 #include "TrajectoryMath.h"
+#include "LevelGenerator.h"
 
 #include <functional>
 #include <random>
@@ -10,9 +11,10 @@
 
 #include <SFML/Graphics/RectangleShape.hpp>
 
-PlayingState::PlayingState(Game* game) :
-	m_Game(game) {
-}
+PlayingState::PlayingState(Game* game, int level) :
+	m_Game(game),
+	m_CurrGameLevel(level)
+{ }
 
 //Initialise Stage upon entering
 void PlayingState::Enter() {  
@@ -27,6 +29,7 @@ void PlayingState::Enter() {
 	world.RegisterComponent<Physics>();
 	world.RegisterComponent<Lifetime>();
 	world.RegisterComponent<Enemy>();
+	world.RegisterComponent<Button>();
 
 	//Register Systems
 	m_RenderSystem = world.RegisterSystem<RenderSystem>();
@@ -35,6 +38,7 @@ void PlayingState::Enter() {
 	m_PhysicsSystem = world.RegisterSystem<PhysicsSystem>();
 	m_LifetimeSystem = world.RegisterSystem<LifetimeSystem>();
 	m_EnemySystem = world.RegisterSystem<EnemySystem>();
+	m_UISystem = world.RegisterSystem<UISystem>();
 
 	//Set Systems World
 	m_RenderSystem->SetWorld(&world);
@@ -43,6 +47,7 @@ void PlayingState::Enter() {
 	m_PhysicsSystem->SetWorld(&world);
 	m_LifetimeSystem->SetWorld(&world);
 	m_EnemySystem->SetWorld(&world);
+	m_UISystem->SetWorld(&world);
 
 	m_EnemySystem->SetTextureManager(&m_Game->GetTextureManager()); //Set Texture Manager referenced by enemySystem
 	m_EnemySystem->SetSoundManager(&m_Game->GetSoundManager());
@@ -79,41 +84,19 @@ void PlayingState::Enter() {
 	enemySignature.set(world.GetComponentID<Enemy>());
 	world.SetSystemSignature<EnemySystem>(enemySignature);
 
-	PrefabGen::game = m_Game;
+	Signature uiSignature;
+	uiSignature.set(world.GetComponentID<Transform>());
+	uiSignature.set(world.GetComponentID<Button>());
+	world.SetSystemSignature<UISystem>(uiSignature);
+
+	PrefabGen::Init(m_Game);
 	m_Game->GetTextureManager().InitGameAnimationData();
 
-	// *** Set Entites *** //
-	//Background
-	Entity background = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(background, { {0.0f,0.0f} });
-	world.AddComponentToEntity<Renderable>(background, { { 1280, 720 }, RenderLayer::Background, &m_Game->m_TextureManager.Load("Dojo_Background"), true});
+	LevelGenerator levelGen(m_Game);
+	levelGen.LoadLevel(m_CurrGameLevel);
 
-	//Ceiling & Floor
-	PrefabGen::Floor({ 0,0 }, { 1300,50 });
-	PrefabGen::Floor({ 0,680 }, { 1300,50 });
-
-	//Walls
-	PrefabGen::Wall({ 0,0 }, { 50, 800 });
-	PrefabGen::Wall({ 1230,0 }, { 50, 800 });
-
-	//Extra Platforms
-	PrefabGen::Floor({ 200,500 }, { 400,50 });
-	PrefabGen::Floor({ 700,200 }, { 800,50 });
-	PrefabGen::Floor({ 0,300 }, { 300,50 });
-
-	PrefabGen::Platform({ 50,500 }, { 150,20 });
-	PrefabGen::Platform({ 600,500 }, { 630,20 });
-
-	//Test target
-	//SpawnTarget();
-
-	//Player
-	PrefabGen::Player();
-
-	//Test enemy
-	Entity samurai = PrefabGen::Samurai({ 800.0f,200.0f }, false);
-	PrefabGen::Archer({ 100.0f,50.0f });
-
+	//Delay input enabling (until sliding door fully opens)
+	world.AddComponentToEntity<Lifetime>(world.CreateEntity(), { 2,0,[&](Entity) {SetInputDisabled(false); } });
 }
 
 void PlayingState::Exit() {
@@ -124,30 +107,50 @@ void PlayingState::Exit() {
 	m_PhysicsSystem.reset();
 	m_ColliderSystem.reset();
 	m_LifetimeSystem.reset();
+	m_EnemySystem.reset();
+	m_UISystem.reset();
 
-	m_Game->m_SoundManager.StopAllSound();
+	//m_Game->m_SoundManager.StopAllSound();
 	m_Game->GetWorld().ResetManagers();
 }
 
 void PlayingState::Update(sf::RenderWindow& renderWindow, const float& deltaTime) {
+
+	//Check for next stage / end stage logic updates
+	if (m_GameOverCnt > 0) m_GameOverCnt -= deltaTime;
+	if (m_NextStageCnt > 0) m_NextStageCnt -= deltaTime;
+
+	if (std::abs(m_GameOverCnt) < 0.01 && !m_GamePaused) {
+		m_GamePaused = true;
+		EndGame(false);
+	}
+	else if (std::abs(m_NextStageCnt) < 0.01) {
+		NextStage();
+	}
 	
 	//Systems Update
-	m_InputSystem->Update(renderWindow, deltaTime);
-	m_PhysicsSystem->Update(deltaTime);
-	m_LifetimeSystem->Update(deltaTime);	
-	m_ColliderSystem->Update();
-	m_EnemySystem->Update(deltaTime);
-	
-	//Update variables
-	if (shurikenCD > 0) {
-		shurikenCD -= deltaTime;
-		if (shurikenCD <= 0) m_InputSystem->SetKeyboardDisabled(false);
-	}
+	if (!m_GamePaused) {
+		m_InputSystem->Update(renderWindow, deltaTime);
+		m_PhysicsSystem->Update(deltaTime);
+		m_LifetimeSystem->Update(deltaTime);
+		m_ColliderSystem->Update();
+		m_EnemySystem->Update(deltaTime);
 
-	UpdatePlayerState(renderWindow);
+		//Update variables
+		if (shurikenCD > 0) {
+			shurikenCD -= deltaTime;
+			if (shurikenCD <= 0) m_InputSystem->SetKeyboardDisabled(false);
+		}
+
+		if (m_GameOverCnt == -1) UpdatePlayerState(renderWindow);
+	}
+	else m_UISystem->Update(renderWindow.mapPixelToCoords(sf::Mouse::getPosition(renderWindow)));
+
+	if (m_EnemySystem->getEnemyCount() == 0 && m_NextStageCnt == -1) m_NextStageCnt = 2.5f;
 }
 
-void PlayingState::Render(sf::RenderWindow& renderWindow, const float& deltaTime) {
+void PlayingState::Render(sf::RenderWindow& renderWindow, float deltaTime) {
+	if (m_GamePaused) deltaTime = 0;
 	m_RenderSystem->Update(renderWindow, deltaTime);
 }
 
@@ -158,6 +161,11 @@ void PlayingState::HandleEvents(const sf::Event& event) {
 	else if (event.is < sf::Event::FocusGained>()) {
 		m_InputSystem->SetWindowFocused(true);
 	}
+	if (m_GamePaused) {
+		sf::RenderWindow& gameWindow = m_Game->GetWindow();
+		m_UISystem->HandleEvents(event, gameWindow.mapPixelToCoords(sf::Mouse::getPosition(gameWindow)));
+	}
+		
 }
 
 void PlayingState::UpdatePlayerState(sf::RenderWindow& renderWindow) {
@@ -166,7 +174,12 @@ void PlayingState::UpdatePlayerState(sf::RenderWindow& renderWindow) {
 	World& world = m_Game->GetWorld();
 
 	if (input.reset) {
-		this->m_Game->m_StateManager.ChangeState(CreateScope<PlayingState>(this->m_Game));
+		m_Game->m_StateManager.EnqueueStateChange(CreateScope<PlayingState>(m_Game));
+	}
+
+	if (input.pause) {
+		m_GamePaused = true;
+		PauseGame();
 		return;
 	}
 		
@@ -200,8 +213,18 @@ void PlayingState::UpdatePlayerState(sf::RenderWindow& renderWindow) {
 			playerComp.playerState = PlayerState::Throwing;
 		}
 		else if (input.isAiming) {
-			playerComp.playerState = PlayerState::Aiming;
-			m_Game->GetTextureManager().ChangeEntitySprite("Player_Aim", playerRenderable, playerAnimation);
+			if (!input.readyToShoot) {
+				playerComp.playerState = PlayerState::Aiming;
+				if (m_Game->GetTextureManager().ChangeEntitySprite("Player_Aiming", playerRenderable, playerAnimation)) {
+					playerAnimation.animationEvents.insert({ 2, [&]() {m_Game->GetSoundManager().PlaySound("Metal_Clank"); }});
+				}
+			}
+			else {
+				playerComp.playerState = PlayerState::ReadyToShoot;
+				if (m_Game->GetTextureManager().ChangeEntitySprite("Player_Aim_Ready", playerRenderable, playerAnimation)) {
+					m_Game->GetSoundManager().PlaySound("Ready_Tinkle");
+				}
+			}
 			sf::FloatRect playerBox{ {world.GetComponent<Transform>(playerEnt).position},
 						 {world.GetComponent<Renderable>(playerEnt).size} };
 			sf::Vector2f shurikenDir = (m_Game->GetWindow().mapPixelToCoords(input.mousePos) - playerBox.getCenter()).normalized();
@@ -293,7 +316,7 @@ void PlayingState::ThrowShuriken(sf::RenderWindow& renderWindow, sf::Vector2f mo
 	m_Game->GetTextureManager().ChangeEntitySprite("Player_Throw_Sprite", playerRenderable, playerAnimation);
 
 	//Refresh cooldown
-	shurikenCD += 0.30f;
+	shurikenCD += 0.45f;
 	m_InputSystem->SetKeyboardDisabled(true);
 }
 
@@ -341,4 +364,134 @@ void PlayingState::EnqueueGameOver() {
 	playerTrans.scale.x = 1.2;
 	playerPhys.velocity.x = 0;
 	m_Game->GetTextureManager().ChangeEntitySprite("Player_Death_Sprite", playerRend, playerAnim);
+	m_GameOverCnt = 2.5f;
+}
+
+void PlayingState::PauseGame() {
+	World& world = m_Game->GetWorld();
+
+	Entity darkOverlay = world.CreateEntity();
+	world.AddComponentToEntity<Transform>(darkOverlay, {});
+	world.AddComponentToEntity<Renderable>(darkOverlay, { {1280, 720}, RenderLayer::UI, nullptr, true, false, sf::Color{0,0,0, 180} });
+	world.AddComponentToEntity<Button>(darkOverlay, {});
+
+	Entity contButton = world.CreateEntity();
+	world.AddComponentToEntity<Transform>(contButton, { { 400, 350 } });
+	world.AddComponentToEntity<Renderable>(contButton, { { 420, 100 }, RenderLayer::UI, &m_Game->m_TextureManager.Load("UI/Button_Continue"), true });
+	world.AddComponentToEntity<Button>(contButton, { {420, 100}, [&]() {
+		m_Game->GetSoundManager().PlaySound("Button_Click");
+		m_GamePaused = false;
+		for (auto& [ent, buttonComp] : world.GetAllComponentsOfType<Button>()) {
+			world.DestroyEntity(ent);
+		}
+		} });
+
+	Entity returnButton = world.CreateEntity();
+	world.AddComponentToEntity<Transform>(returnButton, { { 400, 500 } });
+	world.AddComponentToEntity<Renderable>(returnButton, { { 420, 100 }, RenderLayer::UI, &m_Game->m_TextureManager.Load("UI/Button_Return_MainMenu"), true });
+	world.AddComponentToEntity<Button>(returnButton, { {420, 100}, [&]() {
+		m_Game->GetSoundManager().PlaySound("Button_Click");
+		m_Game->m_StateManager.EnqueueStateChange(CreateScope<MainMenuState>(this->m_Game));
+	} });
+
+	//Volume Control
+	Entity volumeBar = world.CreateEntity();
+	world.AddComponentToEntity<Transform>(volumeBar, { {950, 415} });
+	world.AddComponentToEntity<Renderable>(volumeBar, { { 300, 55 }, RenderLayer::UI, &m_Game->m_TextureManager.Load("UI/Volume_Bar"), false });
+	world.AddComponentToEntity<Button>(volumeBar, {});
+
+	Entity volumeSlider = world.CreateEntity();
+	float sliderX = 975 + ((float)GlobalVolumeLevel / DefaultVolumeSetting * 225);
+	world.AddComponentToEntity<Transform>(volumeSlider, { {sliderX, 428}});
+	world.AddComponentToEntity<Renderable>(volumeSlider, { { 25, 25 }, RenderLayer::UI, &m_Game->m_TextureManager.Load("UI/Volume_Slider"), false });
+	world.AddComponentToEntity<Button>(volumeSlider, { {65, 60}, []() {}, [&, volumeSlider](sf::Vector2f mousePos) {
+		Renderable& sliderRend = m_Game->GetWorld().GetComponent<Renderable>(volumeSlider);
+		if (!sliderRend.visible) return;
+		Transform& sliderTrans = m_Game->GetWorld().GetComponent<Transform>(volumeSlider);
+		sliderTrans.position.x = std::clamp((int)mousePos.x, 975, 1200);
+		GlobalVolumeLevel = (sliderTrans.position.x - 975) / (1200 - 975) * DefaultVolumeSetting;
+		m_Game->GetSoundManager().SetMusicVolume(GlobalVolumeLevel);
+	}
+		});
+
+	Entity volumeButton = world.CreateEntity();
+	world.AddComponentToEntity<Transform>(volumeButton, { {870, 415} });
+	world.AddComponentToEntity<Renderable>(volumeButton, { { 65, 60 }, RenderLayer::UI, &m_Game->m_TextureManager.Load("UI/Volume_Button"), true });
+	world.AddComponentToEntity<Button>(volumeButton, { {65, 60}, [this, volumeBar, volumeSlider]() {
+		m_Game->GetSoundManager().PlaySound("Button_Click");
+		Renderable& volumeBarRend = m_Game->GetWorld().GetComponent<Renderable>(volumeBar);
+		Renderable& volumeSliderRend = m_Game->GetWorld().GetComponent<Renderable>(volumeSlider);
+		volumeBarRend.visible = !volumeBarRend.visible;
+		volumeSliderRend.visible = !volumeSliderRend.visible;
+	} });
+}
+
+void PlayingState::EndGame(bool gameWon) {
+	World& world = m_Game->GetWorld();
+
+	Entity darkOverlay = world.CreateEntity();
+	world.AddComponentToEntity<Transform>(darkOverlay, {});
+	world.AddComponentToEntity<Renderable>(darkOverlay, { {1280, 720}, RenderLayer::UI, nullptr, true, false, sf::Color{0,0,0, 180} });
+
+	Entity textOverlay = world.CreateEntity();
+	world.AddComponentToEntity<Transform>(textOverlay, { {320, 100} });
+	world.AddComponentToEntity<Renderable>(textOverlay, { {600, 150}, RenderLayer::UI });
+	if (gameWon) world.GetComponent<Renderable>(textOverlay).texture = &m_Game->m_TextureManager.Load("UI/Text_Congratulations");
+	else world.GetComponent<Renderable>(textOverlay).texture = &m_Game->m_TextureManager.Load("UI/Text_You_Died");
+
+	Entity restartButton = world.CreateEntity();
+	world.AddComponentToEntity<Transform>(restartButton, { { 400, 350 } });
+	world.AddComponentToEntity<Renderable>(restartButton, { { 420, 100 }, RenderLayer::UI });
+	if (gameWon) world.GetComponent<Renderable>(restartButton).texture = &m_Game->m_TextureManager.Load("UI/Button_Play_Again");
+	else world.GetComponent<Renderable>(restartButton).texture = &m_Game->m_TextureManager.Load("UI/Button_Restart");
+
+	world.AddComponentToEntity<Button>(restartButton, { {420, 100}, [&, gameWon]() {
+		m_Game->GetSoundManager().PlaySound("Button_Click");
+		if (gameWon) m_Game->m_StateManager.EnqueueStateChange(CreateScope<PlayingState>(this->m_Game));
+		else m_Game->m_StateManager.EnqueueStateChange(CreateScope<PlayingState>(this->m_Game, m_CurrGameLevel));
+		} });
+
+	Entity returnButton = world.CreateEntity();
+	world.AddComponentToEntity<Transform>(returnButton, { { 400, 500 } });
+	world.AddComponentToEntity<Renderable>(returnButton, { { 420, 100 }, RenderLayer::UI, &m_Game->m_TextureManager.Load("UI/Button_Return_MainMenu"), true });
+	world.AddComponentToEntity<Button>(returnButton, { {420, 100}, [&]() {
+		m_Game->GetSoundManager().PlaySound("Button_Click");
+		m_Game->m_StateManager.EnqueueStateChange(CreateScope<MainMenuState>(this->m_Game));
+	} });
+
+	if (gameWon) m_Game->GetSoundManager().PlaySound("Victory");
+}
+
+void PlayingState::NextStage() {
+
+	if (!m_SwitchingStage) {
+		m_SwitchingStage = true;
+
+		if (m_CurrGameLevel == m_TotalStages) {
+			m_GamePaused = true;
+			EndGame(true);
+			return;
+		}
+
+		m_CurrGameLevel++;
+
+		Entity leftDoor = PrefabGen::SlidingDoor({ -640, 0 }, false, true);
+		m_Game->GetWorld().GetComponent<Lifetime>(leftDoor).OnDestroyedFunction = [&](Entity) {
+			m_Game->m_StateManager.EnqueueStateChange(CreateScope<PlayingState>(this->m_Game, m_CurrGameLevel));
+			PrefabGen::StaticDoor({0,0}, false);
+		};
+
+		Entity rightDoor = PrefabGen::SlidingDoor({ 1280, 0 }, true, false);
+		m_Game->GetWorld().GetComponent<Lifetime>(rightDoor).OnDestroyedFunction = [&](Entity) {
+			PrefabGen::StaticDoor({ 640,0 }, true);
+			};
+
+		m_Game->GetSoundManager().PlaySound("Sliding_Door");
+		SetInputDisabled(true);
+	}
+}
+
+void PlayingState::SetInputDisabled(bool disabled) {
+	m_InputSystem->SetMouseDisabled(disabled);
+	m_InputSystem->SetKeyboardDisabled(disabled);
 }

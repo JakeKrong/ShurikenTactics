@@ -59,6 +59,14 @@ void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime
 
 		if (renderComp.transformFunction != nullptr) renderComp.transformFunction();
 
+		//Check if it has a text
+		if (renderComp.text.has_value()) {
+			sf::Text text = renderComp.text.value();
+			text.setPosition(transformComp.position);
+			renderable.setFillColor(sf::Color::Transparent);
+			renderWindow.draw(text);
+		}
+
 		renderWindow.draw(renderable);
 	}
 

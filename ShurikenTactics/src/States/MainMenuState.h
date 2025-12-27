@@ -10,8 +10,11 @@ public:
 	void Enter() override;
 	void Exit() override;
 	void Update(sf::RenderWindow&, const float&) override;
-	void Render(sf::RenderWindow&, const float&) override;
+	void Render(sf::RenderWindow&, float) override;
 	void HandleEvents(const sf::Event& event) override;
+
+	void ShowTutorial();
+	void EnableButtons(bool);
 
 private:
 	Game* m_Game;

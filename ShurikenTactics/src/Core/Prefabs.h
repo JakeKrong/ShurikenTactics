@@ -8,7 +8,7 @@
 
 namespace PrefabGen {
 	//Can consider using on World and TextureManager instead of Game later on
-	static Game* game = nullptr;
+	inline Game* game = nullptr;
 
 	inline void Init(Game* g) {
 		game = g;
@@ -18,7 +18,7 @@ namespace PrefabGen {
 
 	//If certain prefab parameters increase by a lot, can use struct as params instead to prevent bloat
 	inline Entity Wall(sf::Vector2f position, sf::Vector2f size) {
-		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
+		assert(game != nullptr && "Game pointer is nullptr in prefabs generator!");
 		World& world = game->GetWorld();
 		Entity wall = world.CreateEntity();
 
@@ -89,16 +89,91 @@ namespace PrefabGen {
 		return floor;
 	}
 
+	inline Entity SidedPlatform(sf::Vector2f position, sf::Vector2f size, bool flip = false) {
+		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
+		World& world = game->GetWorld();
+		Entity floor = world.CreateEntity();
+
+		Transform transform;
+		transform.position = position;
+		world.AddComponentToEntity<Transform>(floor, transform);
+
+		Renderable renderable;
+		renderable.size = size;
+		renderable.layer = RenderLayer::GameObject2;
+		renderable.texture = &game->GetTextureManager().Load("Wooden_Platform_Sided");
+		renderable.flipX = flip;
+		world.AddComponentToEntity<Renderable>(floor, renderable);
+
+		Collider collider;
+		sf::FloatRect rectCollider{ position, {size.x, size.y / 2} };
+		collider.entityColliders.push_back({ rectCollider , {} });
+		collider.type = ColliderType::PlatformBox;
+		world.AddComponentToEntity<Collider>(floor, collider);
+
+		return floor;
+	}
+
+	inline Entity StaticDoor(sf::Vector2f position, bool flipRend) {
+		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
+		World& world = game->GetWorld();
+		Entity door = world.CreateEntity();
+
+		Transform transform;
+		transform.position = position;
+		world.AddComponentToEntity<Transform>(door, transform);
+
+		Renderable renderable;
+		renderable.size = { 640, 720 };
+		renderable.layer = RenderLayer::UI;
+		renderable.texture = &game->GetTextureManager().Load("Effects/Sliding_Door");
+		renderable.flipX = flipRend;
+		world.AddComponentToEntity<Renderable>(door, renderable);
+
+		Lifetime lifetime;
+		lifetime.remainingTime = 0.6f;
+		world.AddComponentToEntity<Lifetime>(door, lifetime);
+
+		return door;
+	}
+
+	inline Entity SlidingDoor(sf::Vector2f position, bool flipRend, bool velocity) {
+		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
+		World& world = game->GetWorld();
+		Entity door = world.CreateEntity();
+
+		Transform transform;
+		transform.position = position;
+		world.AddComponentToEntity<Transform>(door, transform);
+
+		Renderable renderable;
+		renderable.size = {640, 720};
+		renderable.layer = RenderLayer::UI;
+		renderable.texture = &game->GetTextureManager().Load("Effects/Sliding_Door");
+		renderable.flipX = flipRend;
+		world.AddComponentToEntity<Renderable>(door, renderable);
+
+		Physics physics;
+		velocity ? physics.velocity.x = 700 : physics.velocity.x = -700;
+		world.AddComponentToEntity<Physics>(door, physics);
+
+		Lifetime lifetime;
+		lifetime.remainingTime = 0.93f;
+		world.AddComponentToEntity<Lifetime>(door, lifetime);
+
+		return door;
+	}
+
 	// ********** Player / Player-Related Prefabs ********** //
 
-	inline Entity Player() {
+	inline Entity Player(sf::Vector2f position) {
 		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
 		World& world = game->GetWorld();
 
 		Entity player = world.CreateEntity();
 
 		Transform transform;
-		transform.position = { 400.0f,500.0f };
+		transform.position = position;
 		world.AddComponentToEntity<Transform>(player, transform);
 
 		Renderable renderable;
@@ -119,7 +194,7 @@ namespace PrefabGen {
 
 		Collider collider;
 		sf::FloatRect playerHitbox;
-		playerHitbox.position = { 400.0f,100.0f };
+		playerHitbox.position = position;
 		playerHitbox.size = { 80, 100 };
 		collider.entityColliders.push_back({ playerHitbox , {}});
 		collider.type = ColliderType::PlayerBox;
@@ -201,7 +276,7 @@ namespace PrefabGen {
 
 	// ********** Enemy Prefabs ********** //
 
-	inline Entity Samurai(sf::Vector2f position, bool defaultFaceRight){
+	inline Entity Samurai(sf::Vector2f position, bool defaultFaceRight, float fovAngle = 0){
 		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
 		World& world = game->GetWorld();
 
@@ -228,7 +303,7 @@ namespace PrefabGen {
 
 		Collider collider;
 		sf::FloatRect enemyHitbox;
-		enemyHitbox.position = { 400.0f,200.0f };
+		enemyHitbox.position = position;
 		enemyHitbox.size = { 80, 130 };
 		collider.entityColliders.push_back({ enemyHitbox , {120,0} });
 		collider.type = ColliderType::EnemyBox;
@@ -238,12 +313,13 @@ namespace PrefabGen {
 		enemy.origin = position;
 		enemy.defaultFacingRight = defaultFaceRight;
 		enemy.isFacingRight = defaultFaceRight;
+		if (fovAngle != 0) enemy.fovAngle = fovAngle; //FOV Angle will be set as default (140) unless is specified
 		world.AddComponentToEntity<Enemy>(samurai, enemy);
 
 		return samurai;
 	}
 
-	inline Entity Archer(sf::Vector2f position) {
+	inline Entity Archer(sf::Vector2f position, bool defaultFaceRight, float fovAngle = 0) {
 		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
 		World& world = game->GetWorld();
 
@@ -278,7 +354,9 @@ namespace PrefabGen {
 
 		Enemy enemy;
 		enemy.type = EnemyType::Archer;
-		enemy.fovAngle = 120;
+		enemy.defaultFacingRight = defaultFaceRight;
+		enemy.isFacingRight = defaultFaceRight;
+		if (fovAngle != 0) enemy.fovAngle = fovAngle; //FOV Angle will be set as default (140) unless is specified
 		world.AddComponentToEntity<Enemy>(archer, enemy);
 
 		return archer;
@@ -308,33 +386,8 @@ namespace PrefabGen {
 		Physics physics;
 		world.AddComponentToEntity<Physics>(arrow, physics);
 
-		//std::function<void(Entity ent)> onArrowDestroyed = [&](Entity arrow) {
-		//	World& world = game->GetWorld();
-
-		//	Entity destroyEffect = world.CreateEntity();
-		//	world.AddComponentToEntity<Transform>(destroyEffect, world.GetComponent<Transform>(arrow));
-
-		//	Renderable renderable;
-		//	renderable.size = { 30.0f, 30.0f };
-		//	renderable.layer = RenderLayer::GameObject1;
-		//	renderable.texture = &game->GetTextureManager().Load("Shuriken_Break");
-		//	world.AddComponentToEntity<Renderable>(destroyEffect, renderable);
-
-		//	AnimationData animationData;
-		//	animationData.spriteSheetDim = { 3,1 };
-		//	animationData.totalFrames = 3;
-		//	animationData.frameTime = 0.05f;
-		//	world.AddComponentToEntity<AnimationData>(destroyEffect, animationData);
-
-		//	Lifetime lifetime;
-		//	lifetime.remainingTime = animationData.frameTime * animationData.totalFrames;
-		//	world.AddComponentToEntity<Lifetime>(destroyEffect, lifetime);
-
-		//	};
-
 		Lifetime lifetime;
 		lifetime.durability = 1;
-		//lifetime.OnDestroyedFunction = onArrowDestroyed;
 		world.AddComponentToEntity<Lifetime>(arrow, lifetime);
 
 		return arrow;
@@ -374,5 +427,77 @@ namespace PrefabGen {
 		world.AddComponentToEntity<Lifetime>(target, lifetime);
 
 		return target;
+	}
+
+	// ********** UI ********** //
+	inline Entity Key(sf::Vector2f position ,const std::string& keyName) {
+		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
+		World& world = game->GetWorld();
+
+		Entity key = world.CreateEntity();
+
+		Transform transform;
+		world.AddComponentToEntity<Transform>(key, { position });
+
+		Renderable renderable;
+		renderable.size = { 30, 30 };
+		renderable.layer = RenderLayer::UI;
+		renderable.texture = &game->GetTextureManager().Load("Controls/" + keyName);
+		world.AddComponentToEntity<Renderable>(key, renderable);
+
+		return key;
+	}
+
+	inline Entity Text(sf::Vector2f position, const std::string& textContents, int fontSize, sf::Color colour) {
+		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
+		World& world = game->GetWorld();
+
+		Entity key = world.CreateEntity();
+
+		Transform transform;
+		world.AddComponentToEntity<Transform>(key, { position });
+
+		const sf::Font& font(game->GetFontManager().Load("CENTAUR"));	
+		sf::Text text(font);
+		text.setString(textContents);
+		text.setCharacterSize(fontSize);
+		text.setFillColor(colour);
+		text.setStyle(sf::Text::Bold);
+
+		Renderable renderable;
+		renderable.layer = RenderLayer::UI;
+		renderable.text = text;
+
+		world.AddComponentToEntity<Renderable>(key, renderable);
+
+		return key;
+	}
+
+	inline std::string TutorialText(int screen) {
+		switch (screen) {
+		case 1:
+			return ("In Shuriken Tactics, your SHURIKEN is the main tool to dispose of your enemies.\n\n"
+					"Navigate the levels, outplay enemies, and defeat all threats to progress the game.\n\n"
+					"[The current game version has a total of 3 levels, more will be added in the future]");
+		case 2:
+			return ("HOLD [Left Click] to aim your shuriken. When the yellow spark appears, RELEASE to fire.\n\n"
+					"Shurikens can bounce up to TWO times off walls/floors");
+		case 3:
+			return ("Not all floors behave the same. Thinner platform can be jumped onto or dropped through using W and S.\n\n"
+					"Use vertical movement to reposition and survive enemy attacks.");
+		case 4:
+			return ("Samurai are ruthless opponents. When SPOTTED on the same elevation, they will CHASE down and STRIKE\nthe player.\n"
+					"If spotted on a different platform or preparing to shoot, the samurai will GUARD and PARRY incoming \n"
+					"shurikens from the front, reflecting them back. [Deflected Shurikens] are LETHAL to the player.\n\n"
+					"Shurikens hitting the RED AREA of the samurai will be deflected, and the GREEN AREA are the vulnerable spots.");
+		case 5:
+			return ("Archers are deadly at range. When player is spotted, they will draw their bow and fire towards your position\n"
+					"(or your last seen location if player is out-of-sight).\n"
+					"Just before firing, the aiming indicator will briefly flash red, signaling an imminent shot.\n\n"
+					"Archers do not move, but getting too close is dangerous.\n"
+					"When entering their melee range, they can put away their bow to unleash a swift, lethal slashing attack.");
+		default:
+			return "Lorem ipsum";
+		}
 	}
 }
