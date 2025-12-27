@@ -1,7 +1,6 @@
 # Shuriken Tactics #
 
-![Shuriken_Tactics_Preview_7-12-resized](https://github.com/user-attachments/assets/682f9e14-1c7d-4d44-a75e-92ab24ecd19a)
-
+![ShurikenTactics_v1 0_Preview_R](https://github.com/user-attachments/assets/e99c2251-da11-458f-af5a-5ac2d37c4696)
 
 
 ************
@@ -10,20 +9,27 @@ The game is inspired by aiming & trajectory-focused gameplay you play as a ninja
 
 ---
 
+## 📥 Download
+**[Click here to download the latest version (v1.0.0)](https://github.com/JakeKrong/ShurikenTactics/releases/tag/v1.0)**
+
+1. Download the `.zip` file.
+2. Extract all files to a folder.
+3. Run `ShurikenTactics.exe` in the "\ShurikenTactics" folder.
+
 ## Project Status
-> This project is currently in active development as a **learning and portfolio** piece.  
-> Built from scratch without engine dependencies — purely to understand the technical foundations behind gameplay systems.
+> This project has officially had it's v1.0 released, but will still be under active development as a **learning and portfolio** piece.  
+> Built from scratch without engine dependencies, purely to understand the technical foundations behind gameplay systems.
 
 ---
 
-## Core Concept (To be implemented)
-- Move, jump, or drop to traverse around the platforms to position strategically.
-- Throw a number of **shurikens** that **ricochet** off walls and obstacles.
-- Plan attacks strategically, as **enemies utilises their variety of movesets** to fight back the player.
+🥷 Gameplay Concept
+Inspired by trajectory-based combat, you play as a ninja navigating intricate environments. The core loop revolves around:
+
+- Tactical Positioning: Move, jump, and drop across platforms to find the optimal angle of attack.
+- Ricochet Mechanics: Throw shurikens that bounce off walls and obstacles, utilizing geometry to hit enemies behind cover.
+- High Stakes: Poor positioning and reaction results in probable defeat. Success requires mastering the interplay between trajectory, bouncing angles, and player positioning.
 
 If an enemy damages the player, the game is over.
-
-The goal is to defeat the enemies by utilising the interplay between **trajectory**, **bouncing angles**, and **positioning**.
 
 ---
 
@@ -40,7 +46,7 @@ The goal is to defeat the enemies by utilising the interplay between **trajector
 - **Render System** – Renders entities with SFML sprites, shapes, and text.
 - **Input System** – Handles player input and interacts with entity components.
 - **Lifetime System** – Manages entities lifetimes like projectiles, animations, etc...
-
+- **Sounds System** – - Manages concurrent sound effects and looping background tracks with global volume control.
 ---
 
 ## Learning Focus
