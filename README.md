@@ -10,9 +10,9 @@ The game is inspired by aiming & trajectory-focused gameplay you play as a ninja
 ---
 
 ## 📥 Download
-**[Click here to download the latest version (v1.0.0)](https://github.com/JakeKrong/ShurikenTactics/releases/tag/v1.0)**
+**[Click here to download the latest version (v1.0.1)](https://github.com/JakeKrong/ShurikenTactics/releases/tag/v1.0.1)**
 
-1. Download the `.zip` file.
+1. Download the `ShurikenTactics.zip` file.
 2. Extract all files to a folder.
 3. Run `ShurikenTactics.exe` in the "\ShurikenTactics" folder.
 
