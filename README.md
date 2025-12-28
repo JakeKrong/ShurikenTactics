@@ -17,7 +17,7 @@ The game is inspired by aiming & trajectory-focused gameplay you play as a ninja
 3. Run `ShurikenTactics.exe` in the "\ShurikenTactics" folder.
 
 ## Project Status
-> This project has officially had it's v1.0 released, but will still be under active development as a **learning and portfolio** piece.  
+> This project has officially had it's v1.0 released, but will still be under active development as a **learning and portfolio** piece.
 > Built from scratch without engine dependencies, purely to understand the technical foundations behind gameplay systems.
 
 ---
@@ -27,8 +27,7 @@ Inspired by trajectory-based combat, you play as a ninja navigating intricate en
 
 - Tactical Positioning: Move, jump, and drop across platforms to find the optimal angle of attack.
 - Ricochet Mechanics: Throw shurikens that bounce off walls and obstacles, utilizing geometry to hit enemies behind cover.
-- High Stakes: Poor positioning and reaction results in probable defeat. Success requires mastering the interplay between trajectory, bouncing angles, and player positioning.
-
+- Strategic Diversity: Stages in the game are designed with different strategic viewpoints, requiring adaptilbility and planning to overcome.
 If an enemy damages the player, the game is over.
 
 ---
