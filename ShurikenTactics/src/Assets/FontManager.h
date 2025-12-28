@@ -12,6 +12,6 @@ private:
 #ifdef _DEBUG
 	std::string fontBasePath{ "../../../../ShurikenTactics/assets/font/" };
 #else 
-	std::string m_SoundBasePath = "assets/font/";
+	std::string fontBasePath = "assets/font/";
 #endif
 };
