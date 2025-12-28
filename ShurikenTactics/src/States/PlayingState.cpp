@@ -96,7 +96,11 @@ void PlayingState::Enter() {
 	levelGen.LoadLevel(m_CurrGameLevel);
 
 	//Delay input enabling (until sliding door fully opens)
+#ifdef _DEBUG
+	SetInputDisabled(false);
+#else
 	world.AddComponentToEntity<Lifetime>(world.CreateEntity(), { 2,0,[&](Entity) {SetInputDisabled(false); } });
+#endif
 }
 
 void PlayingState::Exit() {
@@ -173,9 +177,11 @@ void PlayingState::UpdatePlayerState(sf::RenderWindow& renderWindow) {
 
 	World& world = m_Game->GetWorld();
 
-	//if (input.reset) {
-	//	m_Game->m_StateManager.EnqueueStateChange(CreateScope<PlayingState>(m_Game));
-	//}
+#ifdef _DEBUG
+	if (input.reset) {
+		m_Game->m_StateManager.EnqueueStateChange(CreateScope<PlayingState>(m_Game));
+	}
+#endif
 
 	if (input.pause) {
 		m_GamePaused = true;

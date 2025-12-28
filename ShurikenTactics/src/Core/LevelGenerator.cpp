@@ -7,7 +7,9 @@ bool LevelGenerator::LoadLevel(int level) {
 
 	CreateLevelBorders();
 	CreateControlsDisplay();
+#ifdef NDEBUG
 	CreateStartingDoors();
+#endif
 
 	switch (level) {
 	case 1:
@@ -93,7 +95,7 @@ bool LevelGenerator::LoadLevel(int level) {
 
 		PrefabGen::Wall({ 550, 50 }, { 50, 50 });
 
-		PrefabGen::Floor({ 50, 50 }, { 180,50 });
+		PrefabGen::Floor({ 50, 50 }, { 170,50 });
 
 		PrefabGen::Floor({ 50, 280 }, { 115,50 });
 		PrefabGen::Floor({ 450, 280 }, { 450,50 });
