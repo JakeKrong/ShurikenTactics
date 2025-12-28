@@ -50,5 +50,5 @@ private:
 	float m_NextStageCnt{ -1 };
 
 	int m_CurrGameLevel{1};
-	int m_TotalStages = 3;
+	int m_TotalStages = 4;
 };

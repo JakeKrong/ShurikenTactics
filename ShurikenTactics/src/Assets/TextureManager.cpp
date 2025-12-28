@@ -187,7 +187,7 @@ void TextureManager::InitGameAnimationData() {
 	animData = AnimationData{};
 	animData.spriteSheetDim = { 5,1 };
 	animData.totalFrames = 5;
-	animData.frameTime = .1f;
+	animData.frameTime = .13f;
 	animData.loopAnim = false;
 	AddAnimationData("Archer/Attack", animData);
 

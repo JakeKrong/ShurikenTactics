@@ -62,16 +62,17 @@ bool LevelGenerator::LoadLevel(int level) {
 		//Floors & Platforms
 		PrefabGen::Floor({ 50, 180 }, { 320,40 });
 		PrefabGen::Platform({ 370, 180 }, { 100,20 });
-		PrefabGen::Wall({ 470, 50 }, { 50, 160 });
+		PrefabGen::Wall({ 470, 50 }, { 50, 165 });
+		PrefabGen::Wall({ 800, 50 }, { 50, 90 });
 		PrefabGen::SidedPlatform({ 1050, 200 }, { 180,25 });
 
 		PrefabGen::Platform({ 50, 350 }, { 150, 20 });
-		PrefabGen::Floor({ 200, 350 }, { 370,50 });
-		PrefabGen::Platform({ 570, 350 }, { 140, 20 });
+		PrefabGen::Floor({ 200, 350 }, { 410,50 });
+		PrefabGen::Platform({ 610, 350 }, { 100, 20 });
 		PrefabGen::Floor({ 710, 350 }, { 520,50 });
 
 		PrefabGen::Wall({ 200, 350 }, { 50, 200 });
-		PrefabGen::Wall({ 710, 350 }, { 50, 170 });
+		PrefabGen::Wall({ 710, 350 }, { 50, 180 });
 
 		PrefabGen::Platform({ 50, 480 }, { 150, 20 });
 
@@ -82,8 +83,40 @@ bool LevelGenerator::LoadLevel(int level) {
 		PrefabGen::Archer({ 950, 0 }, false);
 		PrefabGen::Archer({ 850, 100 }, false);
 
-		PrefabGen::Samurai({ 800, 500 }, false);
-		PrefabGen::Archer({ 950, 500 }, false);
+		PrefabGen::Samurai({ 850, 500 }, false);
+		PrefabGen::Archer({ 1000, 500 }, false);
+
+		return true;
+
+	case 4:
+		//Floors & Platforms
+
+		PrefabGen::Wall({ 550, 50 }, { 50, 50 });
+
+		PrefabGen::Floor({ 50, 50 }, { 180,50 });
+
+		PrefabGen::Floor({ 50, 280 }, { 115,50 });
+		PrefabGen::Floor({ 450, 280 }, { 450,50 });
+		PrefabGen::Platform({ 900, 280 }, { 130,20 });
+		PrefabGen::Floor({ 1030, 280 }, { 200,50 });
+
+		PrefabGen::Floor({ 50, 480 }, { 160,50 });
+		PrefabGen::Wall({ 210, 480 }, { 50, 200 });
+		PrefabGen::Platform({ 260, 480 }, { 100, 20 });
+		PrefabGen::Wall({ 360, 480 }, { 50, 200 });
+		PrefabGen::Floor({ 410, 480 }, { 235, 50 });
+		PrefabGen::Platform({ 645, 480 }, { 175, 20 });
+		PrefabGen::Floor({ 820, 480 }, { 410, 50 });
+
+		PrefabGen::Player({ 250, 600 });
+
+		//Enemies
+		PrefabGen::Archer({ 500, 100 }, true);
+		PrefabGen::Archer({ 600, 100 }, true);
+		PrefabGen::Archer({ 975, 280 }, false);
+		PrefabGen::Archer({ 590, 550 }, false);
+		PrefabGen::Samurai({ -47, 280 }, true);
+		PrefabGen::Samurai({ 1000, 550 }, false);
 
 		return true;
 

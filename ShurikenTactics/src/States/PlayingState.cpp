@@ -286,6 +286,7 @@ void PlayingState::UpdatePlayerState(sf::RenderWindow& renderWindow) {
 	else {
 		m_Game->GetTextureManager().ChangeEntitySprite("Player_Jump_Sprite", playerRenderable, playerAnimation);
 		playerComp.playerState = PlayerState::Airborne;
+		playerPhysics.velocity.x = 0;
 	}
 }
 

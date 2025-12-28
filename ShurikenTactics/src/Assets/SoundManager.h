@@ -35,9 +35,12 @@ private:
     std::unordered_map<std::string, sf::SoundBuffer> m_BuffersMap;
     std::deque<SoundData> m_SoundQueue;
 
-    // Ensure this path is correct relative to your .exe
-    std::string m_SoundBasePath = "../../../../ShurikenTactics/assets/sound/";
-
     SoundID m_NextId = 1;
     sf::Music m_Music;
+
+#ifdef _DEBUG
+    std::string m_SoundBasePath = "../../../../ShurikenTactics/assets/sound/";
+#else 
+    std::string m_SoundBasePath = "assets/sound/";
+#endif
 };

@@ -141,7 +141,7 @@ void EnemySystem::UpdateAlert(Entity enemyEnt) {
 			Renderable& enemyRend = m_World->GetComponent<Renderable>(enemyEnt);
 			AnimationData& enemyAnim = m_World->GetComponent<AnimationData>(enemyEnt);
 			if (enemyComp.type == EnemyType::Samurai) {
-				if (std::abs(enemyTrans.position.x - enemyComp.origin.x) > 1) {
+				if (std::abs(enemyTrans.position.x - enemyComp.origin.x) > 2) {
 					if (enemyPhys.velocity.x == 0) {
 						m_TextureManager->ChangeEntitySprite("Samurai/Sprint", enemyRend, enemyAnim);
 						bool originRightOfEnemy;

@@ -17,7 +17,11 @@ public:
 
 private:
 	std::unordered_map<std::string, sf::Texture> m_TextureMap;
-	std::string m_TextureBasePath = "../../../../ShurikenTactics/assets/textures/";
-
 	std::unordered_map<std::string, AnimationData> m_AnimationTextureMap;
+
+#ifdef _DEBUG
+	std::string m_TextureBasePath = "../../../../ShurikenTactics/assets/textures/";
+#else 
+	std::string m_TextureBasePath = "assets/textures/";
+#endif
 };

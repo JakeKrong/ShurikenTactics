@@ -8,5 +8,10 @@ public:
 	sf::Font& Load(const std::string& fontName);
 private:
 	std::unordered_map<std::string, sf::Font> m_FontMap;
+
+#ifdef _DEBUG
 	std::string fontBasePath{ "../../../../ShurikenTactics/assets/font/" };
+#else 
+	std::string m_SoundBasePath = "assets/font/";
+#endif
 };

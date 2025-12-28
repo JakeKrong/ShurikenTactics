@@ -37,7 +37,7 @@ void InputSystem::Update(sf::RenderWindow& renderWindow, float deltaTime) {
 	newIntent.pause = m_Esc_KeyPressed;
 
 	//Movement 
-	if (!m_W_KeyPressed && !m_S_KeyPressed) {
+	if (!m_W_KeyPressed) {
 		if (m_A_KeyPressed && !m_D_KeyPressed)
 			newIntent.walkLeft = true;
 		if (m_D_KeyPressed && !m_A_KeyPressed)
@@ -45,13 +45,15 @@ void InputSystem::Update(sf::RenderWindow& renderWindow, float deltaTime) {
 	}
 	else {
 		if (m_W_KeyPressed) newIntent.jump = true;
-		if (m_S_KeyPressed) newIntent.dropDown = true;
 	}
+
+	if (m_S_KeyPressed) newIntent.dropDown = true;
 
 	// Projectile
 	newIntent.isAiming = m_MouseLeftClicked;
 	if (m_MouseLeftClicked) {
 		m_MouseLeftHeldTime += deltaTime;
+		newIntent.dropDown = false;
 		if (m_MouseLeftHeldTime > 0.85f) newIntent.readyToShoot = true;
 	}
 		
