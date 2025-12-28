@@ -92,32 +92,31 @@ bool LevelGenerator::LoadLevel(int level) {
 
 	case 4:
 		//Floors & Platforms
-
-		PrefabGen::Wall({ 550, 50 }, { 50, 50 });
-
 		PrefabGen::Floor({ 50, 50 }, { 170,50 });
+		PrefabGen::Floor({ 220, 50 }, { 18,20 });
+		PrefabGen::Wall({ 550, 50 }, { 50, 57 });
 
-		PrefabGen::Floor({ 50, 280 }, { 115,50 });
+		PrefabGen::Floor({ 50, 280 }, { 116,52 });
 		PrefabGen::Floor({ 450, 280 }, { 450,50 });
 		PrefabGen::Platform({ 900, 280 }, { 130,20 });
 		PrefabGen::Floor({ 1030, 280 }, { 200,50 });
 
-		PrefabGen::Floor({ 50, 480 }, { 160,50 });
-		PrefabGen::Wall({ 210, 480 }, { 50, 200 });
-		PrefabGen::Platform({ 260, 480 }, { 100, 20 });
-		PrefabGen::Wall({ 360, 480 }, { 50, 200 });
-		PrefabGen::Floor({ 410, 480 }, { 235, 50 });
-		PrefabGen::Platform({ 645, 480 }, { 175, 20 });
-		PrefabGen::Floor({ 820, 480 }, { 410, 50 });
+		PrefabGen::Floor({ 50, 475 }, { 170,55 });
+		PrefabGen::Wall({ 220, 475 }, { 50, 205 });
+		PrefabGen::Platform({ 270, 475 }, { 90, 25 });
+		PrefabGen::Wall({ 360, 475 }, { 50, 205 });
+		PrefabGen::Floor({ 410, 475 }, { 235, 55 });
+		PrefabGen::Platform({ 645, 475 }, { 175, 25 });
+		PrefabGen::Floor({ 820, 475 }, { 410, 55 });
 
-		PrefabGen::Player({ 250, 600 });
+		PrefabGen::Player({ 270, 600 });
 
 		//Enemies
-		PrefabGen::Archer({ 500, 100 }, true);
-		PrefabGen::Archer({ 600, 100 }, true);
+		PrefabGen::Archer({ 520, 100 }, true);
+		PrefabGen::Archer({ 620, 100 }, true);
 		PrefabGen::Archer({ 975, 280 }, false);
 		PrefabGen::Archer({ 590, 550 }, false);
-		PrefabGen::Samurai({ -47, 280 }, true);
+		PrefabGen::Samurai({ -49.5, 280 }, true);
 		PrefabGen::Samurai({ 1000, 550 }, false);
 
 		return true;
