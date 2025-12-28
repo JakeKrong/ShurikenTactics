@@ -74,3 +74,7 @@ void InputSystem::HandleEvents(const sf::Event& event) { }
 void InputSystem::SetKeyboardDisabled(bool boolean) { m_KeyboardDisabled = boolean; }
 void InputSystem::SetMouseDisabled(bool boolean) { m_MouseDisabled = boolean; }
 void InputSystem::SetWindowFocused(bool boolean) { m_WindowFocused = boolean; }
+
+void InputSystem::ResetMouseHeldDuration() {
+	m_MouseLeftHeldTime = 0.0f;
+}

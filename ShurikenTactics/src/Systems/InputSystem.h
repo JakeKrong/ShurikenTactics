@@ -32,6 +32,7 @@ public:
 	void SetWindowFocused(bool);
 
 	const PlayerInputIntent& GetIntent() const { return m_Intent; }
+	void ResetMouseHeldDuration();
 
 private:
 	PlayerInputIntent m_Intent{};

@@ -293,6 +293,7 @@ void PlayingState::UpdatePlayerState(sf::RenderWindow& renderWindow) {
 		m_Game->GetTextureManager().ChangeEntitySprite("Player_Jump_Sprite", playerRenderable, playerAnimation);
 		playerComp.playerState = PlayerState::Airborne;
 		playerPhysics.velocity.x = 0;
+		m_InputSystem->ResetMouseHeldDuration();
 	}
 }
 
