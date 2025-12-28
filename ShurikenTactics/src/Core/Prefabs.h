@@ -478,7 +478,7 @@ namespace PrefabGen {
 		case 1:
 			return ("In Shuriken Tactics, your SHURIKEN is the main tool to dispose of your enemies.\n\n"
 					"Navigate the levels, outplay enemies, and defeat all threats to progress the game.\n\n"
-					"[The current game version has a total of 3 levels, more will be added in the future]");
+					"[The current game version has a total of 4 levels, more will be added in the future]");
 		case 2:
 			return ("HOLD [Left Click] to aim your shuriken. When the yellow spark appears, RELEASE to fire.\n\n"
 					"Shurikens can bounce up to TWO times off walls/floors");
