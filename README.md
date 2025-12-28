@@ -18,7 +18,6 @@ The game is inspired by aiming & trajectory-focused gameplay you play as a ninja
 
 ## Project Status
 > This project has officially had it's v1.0 released, but will still be under active development as a **learning and portfolio** piece.
-> There are a total of *4* different levels for players to play and challenge. (as of v1.0.1)
 > Built from scratch without engine dependencies, purely to understand the technical foundations behind gameplay systems.
 
 ---
