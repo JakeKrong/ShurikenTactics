@@ -4,7 +4,7 @@
 
 
 ************
-**Shuriken Tactics** is a concept / learning project built in **C++** using **SFML 3.0** and a custom **Entity-Component-System (ECS)** architecture.  
+**Shuriken Tactics** is a portfolio project built in **C++** using **SFML 3.0** and a custom **Entity-Component-System (ECS)** architecture.  
 The game is inspired by aiming & trajectory-focused gameplay you play as a ninja who throws ricocheting shurikens to defeat enemies across turns.
 
 ---
