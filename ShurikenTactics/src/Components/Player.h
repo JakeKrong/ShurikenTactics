@@ -1,6 +1,6 @@
 #pragma once
 
-enum PlayerState {
+enum class PlayerState : uint8_t{
 	Idle,
 	Walking,
 	Airborne,
@@ -13,9 +13,10 @@ enum PlayerState {
 struct Player {
 	float health{ 100 };
 	float movement{ 100 };
-	bool isControllable{ false };
 
 	float movementSpeed = 20.0f;
 	float jumpForce = 1000.f;
 	PlayerState playerState = PlayerState::Idle;
+
+	bool isControllable{ false };
 };

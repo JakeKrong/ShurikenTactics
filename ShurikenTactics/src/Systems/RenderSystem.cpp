@@ -57,8 +57,6 @@ void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime
 			renderable.setOrigin({ renderable.getOrigin().x + renderComp.size.x, renderable.getOrigin().y });
 		}
 
-		if (renderComp.transformFunction != nullptr) renderComp.transformFunction();
-
 		//Check if it has a text
 		if (renderComp.text.has_value()) {
 			sf::Text text = renderComp.text.value();

@@ -10,7 +10,7 @@
 //const float DEFAULT_SIZE = 30.0f;
 //sf::Color DEFAULT_COLOR{ sf::Color::White };
 
-enum class RenderLayer {
+enum class RenderLayer : uint8_t{
 	Background,
 	GameObject2,
 	Player,
@@ -26,7 +26,6 @@ struct Renderable {
 	bool flipX = false;
 	sf::Color tint = sf::Color::White;
 	std::optional<sf::Text> text;
-	std::function<void()> transformFunction = nullptr; //For transform related display mods (rotation, shaking, etc...)
 };
 
 struct AnimationData {

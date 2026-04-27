@@ -1,11 +1,9 @@
 #pragma once
-#include <cstdint>
 #include <string>
 #include <typeindex>
 #include <vector>
 #include <unordered_map>
 #include <cassert>
-//#include <typeindex>
 #include "Types.h"
 
 //Interface for ComponentArray
@@ -67,6 +65,7 @@ public:
 		}
 	}
 
+	//For testing only
 	std::vector<std::pair<Entity,T*>> GetAllComponents(){
 		std::vector<std::pair<Entity,T*>> componentVect;
 		componentVect.reserve(m_Index + 1);

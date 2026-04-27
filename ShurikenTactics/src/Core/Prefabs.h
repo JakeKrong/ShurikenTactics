@@ -5,45 +5,46 @@
 
 //Test
 #include <print>
+#include <iostream>
+
+struct PrefabContext {
+	World& world;
+	TextureManager* textures;
+	SoundManager* sound;
+	FontManager* font;
+};
 
 namespace PrefabGen {
-	//Can consider using on World and TextureManager instead of Game later on
-	inline Game* game = nullptr;
-
-	inline void Init(Game* g) {
-		game = g;
-	}
 
 	// ********** Environment Prefabs ********** //
 
 	//If certain prefab parameters increase by a lot, can use struct as params instead to prevent bloat
-	inline Entity Wall(sf::Vector2f position, sf::Vector2f size) {
-		assert(game != nullptr && "Game pointer is nullptr in prefabs generator!");
-		World& world = game->GetWorld();
+
+	inline Entity Wall(const PrefabContext& prefCtx, sf::Vector2f position, sf::Vector2f size) {
+		World& world = prefCtx.world;
 		Entity wall = world.CreateEntity();
 
-		Transform transform; 
+		Transform transform;
 		transform.position = position;
 		world.AddComponentToEntity<Transform>(wall, transform);
 
 		Renderable renderable;
 		renderable.size = size;
 		renderable.layer = RenderLayer::GameObject2;
-		renderable.texture = &game->GetTextureManager().Load("Wooden_Pillar");
+		renderable.texture = &prefCtx.textures->Load("Wooden_Pillar");
 		world.AddComponentToEntity<Renderable>(wall, renderable);
 
 		Collider collider;
 		sf::FloatRect rectCollider{ position, size };
-		collider.entityColliders.push_back({ rectCollider , {}});
+		collider.entityColliders.push_back({ rectCollider , {} });
 		collider.type = ColliderType::ObstacleBox;
 		world.AddComponentToEntity<Collider>(wall, collider);
 
 		return wall;
 	}
 
-	inline Entity Floor(sf::Vector2f position, sf::Vector2f size) {
-		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
-		World& world = game->GetWorld();
+	inline Entity Floor(const PrefabContext& prefCtx, sf::Vector2f position, sf::Vector2f size) {
+		World& world = prefCtx.world;
 		Entity floor = world.CreateEntity();
 
 		Transform transform;
@@ -53,7 +54,7 @@ namespace PrefabGen {
 		Renderable renderable;
 		renderable.size = size;
 		renderable.layer = RenderLayer::GameObject2;
-		renderable.texture = &game->GetTextureManager().Load("Wood_Floor");
+		renderable.texture = &prefCtx.textures->Load("Wood_Floor");
 		world.AddComponentToEntity<Renderable>(floor, renderable);
 
 		Collider collider;
@@ -65,9 +66,8 @@ namespace PrefabGen {
 		return floor;
 	}
 
-	inline Entity Platform(sf::Vector2f position, sf::Vector2f size) {
-		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
-		World& world = game->GetWorld();
+	inline Entity Platform(const PrefabContext& prefCtx, sf::Vector2f position, sf::Vector2f size) {
+		World& world = prefCtx.world;
 		Entity floor = world.CreateEntity();
 
 		Transform transform;
@@ -77,7 +77,7 @@ namespace PrefabGen {
 		Renderable renderable;
 		renderable.size = size;
 		renderable.layer = RenderLayer::GameObject2;
-		renderable.texture = &game->GetTextureManager().Load("Wooden_Platform");
+		renderable.texture = &prefCtx.textures->Load("Wooden_Platform");
 		world.AddComponentToEntity<Renderable>(floor, renderable);
 
 		Collider collider;
@@ -89,9 +89,8 @@ namespace PrefabGen {
 		return floor;
 	}
 
-	inline Entity SidedPlatform(sf::Vector2f position, sf::Vector2f size, bool flip = false) {
-		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
-		World& world = game->GetWorld();
+	inline Entity SidedPlatform(const PrefabContext& prefCtx, sf::Vector2f position, sf::Vector2f size, bool flip = false) {
+		World& world = prefCtx.world;
 		Entity floor = world.CreateEntity();
 
 		Transform transform;
@@ -101,7 +100,7 @@ namespace PrefabGen {
 		Renderable renderable;
 		renderable.size = size;
 		renderable.layer = RenderLayer::GameObject2;
-		renderable.texture = &game->GetTextureManager().Load("Wooden_Platform_Sided");
+		renderable.texture = &prefCtx.textures->Load("Wooden_Platform_Sided");
 		renderable.flipX = flip;
 		world.AddComponentToEntity<Renderable>(floor, renderable);
 
@@ -114,9 +113,8 @@ namespace PrefabGen {
 		return floor;
 	}
 
-	inline Entity StaticDoor(sf::Vector2f position, bool flipRend) {
-		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
-		World& world = game->GetWorld();
+	inline Entity StaticDoor(const PrefabContext& prefCtx, sf::Vector2f position, bool flipRend) {
+		World& world = prefCtx.world;
 		Entity door = world.CreateEntity();
 
 		Transform transform;
@@ -126,7 +124,7 @@ namespace PrefabGen {
 		Renderable renderable;
 		renderable.size = { 640, 720 };
 		renderable.layer = RenderLayer::UI;
-		renderable.texture = &game->GetTextureManager().Load("Effects/Sliding_Door");
+		renderable.texture = &prefCtx.textures->Load("Effects/Sliding_Door");
 		renderable.flipX = flipRend;
 		world.AddComponentToEntity<Renderable>(door, renderable);
 
@@ -137,9 +135,8 @@ namespace PrefabGen {
 		return door;
 	}
 
-	inline Entity SlidingDoor(sf::Vector2f position, bool flipRend, bool velocity) {
-		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
-		World& world = game->GetWorld();
+	inline Entity SlidingDoor(const PrefabContext& prefCtx, sf::Vector2f position, bool flipRend, bool velocity) {
+		World& world = prefCtx.world;
 		Entity door = world.CreateEntity();
 
 		Transform transform;
@@ -149,7 +146,7 @@ namespace PrefabGen {
 		Renderable renderable;
 		renderable.size = {640, 720};
 		renderable.layer = RenderLayer::UI;
-		renderable.texture = &game->GetTextureManager().Load("Effects/Sliding_Door");
+		renderable.texture = &prefCtx.textures->Load("Effects/Sliding_Door");
 		renderable.flipX = flipRend;
 		world.AddComponentToEntity<Renderable>(door, renderable);
 
@@ -166,9 +163,8 @@ namespace PrefabGen {
 
 	// ********** Player / Player-Related Prefabs ********** //
 
-	inline Entity Player(sf::Vector2f position) {
-		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
-		World& world = game->GetWorld();
+	inline Entity Player(const PrefabContext& prefCtx, sf::Vector2f position) {
+		World& world = prefCtx.world;
 
 		Entity player = world.CreateEntity();
 
@@ -179,7 +175,7 @@ namespace PrefabGen {
 		Renderable renderable;
 		renderable.size = { 80, 100 };
 		renderable.layer = RenderLayer::Player;
-		renderable.texture = &game->GetTextureManager().Load("Player_Idle_Sprite");
+		renderable.texture = &prefCtx.textures->Load("Player_Idle_Sprite");
 		world.AddComponentToEntity<Renderable>(player, renderable);
 
 		AnimationData animationData;
@@ -208,9 +204,8 @@ namespace PrefabGen {
 		return player;
 	}
 
-	inline Entity Shuriken() {
-		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
-		World& world = game->GetWorld();
+	inline Entity Shuriken(const PrefabContext& prefCtx) {
+		World& world = prefCtx.world;
 
 		Entity shuriken = world.CreateEntity();
 
@@ -220,7 +215,7 @@ namespace PrefabGen {
 		Renderable renderable;
 		renderable.size = { 30, 30 };
 		renderable.layer = RenderLayer::GameObject1;
-		renderable.texture = &game->GetTextureManager().Load("Shuriken");
+		renderable.texture = &prefCtx.textures->Load("Shuriken");
 		world.AddComponentToEntity<Renderable>(shuriken, renderable);
 
 		AnimationData animationData;
@@ -239,8 +234,8 @@ namespace PrefabGen {
 		Physics physics;
 		world.AddComponentToEntity<Physics>(shuriken, physics);
 
-		std::function<void(Entity ent)> onShurikenDestroyed = [&](Entity shuriken) {
-			World& world = game->GetWorld();
+		std::function<void(Entity ent)> onShurikenDestroyed = [prefCtx](Entity shuriken) {
+			World& world = prefCtx.world;
 
 			Entity destroyEffect = world.CreateEntity();
 			world.AddComponentToEntity<Transform>(destroyEffect, world.GetComponent<Transform>(shuriken));
@@ -248,7 +243,7 @@ namespace PrefabGen {
 			Renderable renderable;
 			renderable.size = { 30.0f, 30.0f };
 			renderable.layer = RenderLayer::GameObject1;
-			renderable.texture = &game->GetTextureManager().Load("Shuriken_Break");
+			renderable.texture = &prefCtx.textures->Load("Shuriken_Break");
 			world.AddComponentToEntity<Renderable>(destroyEffect, renderable);
 
 			AnimationData animationData;
@@ -260,7 +255,6 @@ namespace PrefabGen {
 			Lifetime lifetime;
 			lifetime.remainingTime = animationData.frameTime * animationData.totalFrames;
 			world.AddComponentToEntity<Lifetime>(destroyEffect, lifetime);
-
 			};
 
 		Lifetime lifetime;
@@ -268,17 +262,16 @@ namespace PrefabGen {
 		lifetime.OnDestroyedFunction = onShurikenDestroyed;
 		world.AddComponentToEntity<Lifetime>(shuriken, lifetime);
 
-		game->GetSoundManager().PlaySound("Shuriken_Throw");
-		game->GetSoundManager().PlaySound("Shuriken_Slash");
+		prefCtx.sound->PlaySound("Shuriken_Throw");
+		prefCtx.sound->PlaySound("Shuriken_Slash");
 
 		return shuriken;
 	}
 
 	// ********** Enemy Prefabs ********** //
 
-	inline Entity Samurai(sf::Vector2f position, bool defaultFaceRight, float fovAngle = 0){
-		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
-		World& world = game->GetWorld();
+	inline Entity Samurai(const PrefabContext& prefCtx, sf::Vector2f position, bool defaultFaceRight, float fovAngle = 0){
+		World& world = prefCtx.world;
 
 		Entity samurai = world.CreateEntity();
 
@@ -289,11 +282,11 @@ namespace PrefabGen {
 		Renderable renderable;
 		renderable.size = { 300, 130 };
 		renderable.layer = RenderLayer::GameObject1;
-		renderable.texture = &game->GetTextureManager().Load("Samurai/Idle");
+		renderable.texture = &prefCtx.textures->Load("Samurai/Idle");
 		world.AddComponentToEntity<Renderable>(samurai, renderable);
 
 		AnimationData animData;
-		game->GetTextureManager().SetAnimationData("Samurai/Idle", animData);
+		prefCtx.textures->SetAnimationData("Samurai/Idle", animData);
 		world.AddComponentToEntity<AnimationData>(samurai, animData);
 
 		Physics enemyPhy;
@@ -319,9 +312,8 @@ namespace PrefabGen {
 		return samurai;
 	}
 
-	inline Entity Archer(sf::Vector2f position, bool defaultFaceRight, float fovAngle = 0) {
-		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
-		World& world = game->GetWorld();
+	inline Entity Archer(const PrefabContext& prefCtx, sf::Vector2f position, bool defaultFaceRight, float fovAngle = 0) {
+		World& world = prefCtx.world;
 
 		Entity archer = world.CreateEntity();
 
@@ -332,11 +324,11 @@ namespace PrefabGen {
 		Renderable renderable;
 		renderable.size = { 300, 200 };
 		renderable.layer = RenderLayer::GameObject1;
-		renderable.texture = &game->GetTextureManager().Load("Archer/Idle");
+		renderable.texture = &prefCtx.textures->Load("Archer/Idle");
 		world.AddComponentToEntity<Renderable>(archer, renderable);
 
 		AnimationData animData;
-		game->GetTextureManager().SetAnimationData("Archer/Idle", animData);
+		prefCtx.textures->SetAnimationData("Archer/Idle", animData);
 		world.AddComponentToEntity<AnimationData>(archer, animData);
 
 		Physics enemyPhy;
@@ -362,9 +354,8 @@ namespace PrefabGen {
 		return archer;
 	}
 
-	inline Entity Arrow() {
-		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
-		World& world = game->GetWorld();
+	inline Entity Arrow(const PrefabContext& prefCtx) {
+		World& world = prefCtx.world;
 
 		Entity arrow = world.CreateEntity();
 
@@ -374,7 +365,7 @@ namespace PrefabGen {
 		Renderable renderable;
 		renderable.size = { 50, 5 };
 		renderable.layer = RenderLayer::GameObject1;
-		renderable.texture = &game->GetTextureManager().Load("Archer/Arrow");
+		renderable.texture = &prefCtx.textures->Load("Archer/Arrow");
 		world.AddComponentToEntity<Renderable>(arrow, renderable);
 
 		Collider collider;
@@ -394,9 +385,8 @@ namespace PrefabGen {
 	}
 
 
-	inline Entity Target() {
-		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
-		World& world = game->GetWorld();
+	inline Entity Target(const PrefabContext& prefCtx) {
+		World& world = prefCtx.world;
 
 		Entity target = world.CreateEntity();
 
@@ -406,7 +396,7 @@ namespace PrefabGen {
 		Renderable renderable;
 		renderable.size = { 60, 100 };
 		renderable.layer = RenderLayer::GameObject1;
-		renderable.texture = &game->GetTextureManager().Load("Strawman_Target");
+		renderable.texture = &prefCtx.textures->Load("Strawman_Target");
 		world.AddComponentToEntity<Renderable>(target, renderable);
 
 		Collider collider;
@@ -430,9 +420,8 @@ namespace PrefabGen {
 	}
 
 	// ********** UI ********** //
-	inline Entity Key(sf::Vector2f position ,const std::string& keyName) {
-		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
-		World& world = game->GetWorld();
+	inline Entity Key(const PrefabContext& prefCtx, sf::Vector2f position ,const std::string& keyName) {
+		World& world = prefCtx.world;
 
 		Entity key = world.CreateEntity();
 
@@ -442,22 +431,21 @@ namespace PrefabGen {
 		Renderable renderable;
 		renderable.size = { 30, 30 };
 		renderable.layer = RenderLayer::UI;
-		renderable.texture = &game->GetTextureManager().Load("Controls/" + keyName);
+		renderable.texture = &prefCtx.textures->Load("Controls/" + keyName);
 		world.AddComponentToEntity<Renderable>(key, renderable);
 
 		return key;
 	}
 
-	inline Entity Text(sf::Vector2f position, const std::string& textContents, int fontSize, sf::Color colour) {
-		assert(game != nullptr && "World pointer is nullptr in prefabs generator!");
-		World& world = game->GetWorld();
+	inline Entity Text(const PrefabContext& prefCtx, sf::Vector2f position, const std::string& textContents, int fontSize, sf::Color colour) {
+		World& world = prefCtx.world;
 
 		Entity key = world.CreateEntity();
 
 		Transform transform;
 		world.AddComponentToEntity<Transform>(key, { position });
 
-		const sf::Font& font(game->GetFontManager().Load("CENTAUR"));	
+		const sf::Font& font(prefCtx.font->Load("CENTAUR"));	
 		sf::Text text(font);
 		text.setString(textContents);
 		text.setCharacterSize(fontSize);

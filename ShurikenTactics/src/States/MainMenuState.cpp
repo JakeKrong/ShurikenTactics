@@ -35,23 +35,21 @@ void MainMenuState::Enter() {  //Initialise Main Menu
 	uiSignature.set(world.GetComponentID<Button>());
 	world.SetSystemSignature<UISystem>(uiSignature);
 
-	PrefabGen::Init(m_Game);
-
 	// *** Set Entites *** //
 	//Background
 	Entity background = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(background, { {0.0f,0.0f} });
-	world.AddComponentToEntity<Renderable>(background, {{ 1280, 720 }, RenderLayer::Background, &m_Game->m_TextureManager.Load("Dojo_TitleScreen"), true});
+	world.AddComponentToEntity<Renderable>(background, {{ 1280, 720 }, RenderLayer::Background, &m_Game->GetTextureManager().Load("Dojo_TitleScreen"), true});
 
 	//Title
 	Entity title = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(title, { {430,60} });
-	world.AddComponentToEntity<Renderable>(title, { { 420, 260 }, RenderLayer::UI, &m_Game->m_TextureManager.Load("UI/ShurikenTactics_Title"), true });
+	world.AddComponentToEntity<Renderable>(title, { { 420, 260 }, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/ShurikenTactics_Title"), true });
 
 	// --- Buttons ---
 	Entity startButton = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(startButton, { {430,400} });
-	world.AddComponentToEntity<Renderable>(startButton, { { 420, 100 }, RenderLayer::UI, &m_Game->m_TextureManager.Load("UI/Button_StartGame"), true });
+	world.AddComponentToEntity<Renderable>(startButton, { { 420, 100 }, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/Button_StartGame"), true });
 	world.AddComponentToEntity<Button>(startButton, { {420, 100}, [this]() {
 		m_Game->GetSoundManager().PlaySound("Button_Click");
 		m_Game->m_StateManager.EnqueueStateChange(CreateScope<PlayingState>(this->m_Game));
@@ -59,7 +57,7 @@ void MainMenuState::Enter() {  //Initialise Main Menu
 
 	Entity quitButton = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(quitButton, { {430.0f, 530.0f} });
-	world.AddComponentToEntity<Renderable>(quitButton, { { 420, 100 }, RenderLayer::UI, &m_Game->m_TextureManager.Load("UI/Button_QuitGame"), true });
+	world.AddComponentToEntity<Renderable>(quitButton, { { 420, 100 }, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/Button_QuitGame"), true });
 	world.AddComponentToEntity<Button>(quitButton, { {420, 100}, [this]() {
 		m_Game->GetSoundManager().PlaySound("Button_Click");
 		m_Game->GetWindow().close();
@@ -67,7 +65,7 @@ void MainMenuState::Enter() {  //Initialise Main Menu
 
 	Entity tutorialButton = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(tutorialButton, { {350, 415} });
-	world.AddComponentToEntity<Renderable>(tutorialButton, { { 65, 60 }, RenderLayer::UI, &m_Game->m_TextureManager.Load("UI/Question_Button"), true });
+	world.AddComponentToEntity<Renderable>(tutorialButton, { { 65, 60 }, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/Question_Button"), true });
 	world.AddComponentToEntity<Button>(tutorialButton, { {65, 60}, [this]() {
 		EnableButtons(false);
 		ShowTutorial(); 
@@ -77,12 +75,12 @@ void MainMenuState::Enter() {  //Initialise Main Menu
 	//Volume Control
 	Entity volumeBar = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(volumeBar, { {950, 415} });
-	world.AddComponentToEntity<Renderable>(volumeBar, { { 300, 55 }, RenderLayer::UI, &m_Game->m_TextureManager.Load("UI/Volume_Bar"), false });
+	world.AddComponentToEntity<Renderable>(volumeBar, { { 300, 55 }, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/Volume_Bar"), false });
 
 	Entity volumeSlider = world.CreateEntity();
 	float sliderX = 975 + ((float)GlobalVolumeLevel / DefaultVolumeSetting * 225);
 	world.AddComponentToEntity<Transform>(volumeSlider, { {sliderX, 428} });
-	world.AddComponentToEntity<Renderable>(volumeSlider, { { 25, 25 }, RenderLayer::UI, &m_Game->m_TextureManager.Load("UI/Volume_Slider"), false });
+	world.AddComponentToEntity<Renderable>(volumeSlider, { { 25, 25 }, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/Volume_Slider"), false });
 	world.AddComponentToEntity<Button>(volumeSlider, { {65, 60}, []() {}, [&, volumeSlider](sf::Vector2f mousePos) {
 		Renderable& sliderRend = m_Game->GetWorld().GetComponent<Renderable>(volumeSlider);
 		if (!sliderRend.visible) return;
@@ -95,7 +93,7 @@ void MainMenuState::Enter() {  //Initialise Main Menu
 
 	Entity volumeButton = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(volumeButton, { {870, 415} });
-	world.AddComponentToEntity<Renderable>(volumeButton, { { 65, 60 }, RenderLayer::UI, &m_Game->m_TextureManager.Load("UI/Volume_Button"), true });
+	world.AddComponentToEntity<Renderable>(volumeButton, { { 65, 60 }, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/Volume_Button"), true });
 	world.AddComponentToEntity<Button>(volumeButton, { {65, 60}, [this, volumeBar, volumeSlider]() {
 		m_Game->GetSoundManager().PlaySound("Button_Click");
 		Renderable& volumeBarRend = m_Game->GetWorld().GetComponent<Renderable>(volumeBar);
@@ -142,8 +140,10 @@ void MainMenuState::ShowTutorial() {
 	world.AddComponentToEntity<Transform>(tutorialImg, { {240, 20} });
 	world.AddComponentToEntity<Renderable>(tutorialImg, { {800, 450}, RenderLayer::UI, &m_Game->GetTextureManager().Load("Tutorial/1")});
 
-	Entity tutorialText = PrefabGen::Text({ 200, 500 }, PrefabGen::TutorialText(1), 20, sf::Color::White);
-	Entity pageInd = PrefabGen::Text({ 618, 650 }, "1 / " + std::to_string(totalTutorialPages), 20, sf::Color::White);
+	PrefabContext prefabCtx = { world, &m_Game->GetTextureManager(), &m_Game->GetSoundManager(), &m_Game->GetFontManager()};
+
+	Entity tutorialText = PrefabGen::Text(prefabCtx, { 200, 500 }, PrefabGen::TutorialText(1), 20, sf::Color::White);
+	Entity pageInd = PrefabGen::Text(prefabCtx, { 618, 650 }, "1 / " + std::to_string(totalTutorialPages), 20, sf::Color::White);
 
 	Entity prevPageButton = world.CreateEntity();
 	world.AddComponentToEntity<Transform>(prevPageButton, { {100, 500} });
