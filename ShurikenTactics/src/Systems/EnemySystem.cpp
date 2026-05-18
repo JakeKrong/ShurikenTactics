@@ -99,7 +99,7 @@ void EnemySystem::UpdateIdle(Entity enemyEnt) {
 
 		Entity exclaMark = m_World->CreateEntity();
 		m_World->AddComponentToEntity<Transform>(exclaMark, { {losOrigin.x, mainEnemyCol.position.y - 30} });
-		m_World->AddComponentToEntity<Renderable>(exclaMark, { {10,25}, RenderLayer::UI, &m_TextureManager->Load("Effects/Exclamation_Mark") });
+		m_World->AddComponentToEntity<Renderable>(exclaMark, { {10,25}, &m_TextureManager->Load("Effects/Exclamation_Mark"), nullptr, RenderLayer::UI });
 		m_World->AddComponentToEntity<Lifetime>(exclaMark, { newStateChangeCd });
 		m_SoundManager->PlaySound("Alert");
 	}
@@ -230,7 +230,7 @@ void EnemySystem::UpdateGuard(Entity enemyEnt) {
 		//Create sparks
 		Entity sparks = m_World->CreateEntity();
 		m_World->AddComponentToEntity<Transform>(sparks, { {enemyTrans.position.x + 30, enemyTrans.position.y - 180}, {1,1} });
-		m_World->AddComponentToEntity<Renderable>(sparks, { {200,300}, RenderLayer::UI, &m_TextureManager->Load("Effects/Sparks") });
+		m_World->AddComponentToEntity<Renderable>(sparks, { {200,300}, &m_TextureManager->Load("Effects/Sparks"), nullptr, RenderLayer::UI });
 		m_World->AddComponentToEntity<AnimationData>(sparks, { {1,4}, 4, .05f});
 		m_World->AddComponentToEntity<Lifetime>(sparks, {.15f});
 
@@ -371,7 +371,7 @@ void EnemySystem::UpdateDead(Entity enemyEnt) {
 	bloodRend.flipX = true;
 	bloodRend.layer = RenderLayer::GameObject1;
 	m_TextureManager->ChangeEntitySprite("Effects/Blood", bloodRend, bloodAnim);
-	m_World->AddComponentToEntity<Renderable>(blood, bloodRend);
+	m_World->AddComponentToEntity<Renderable>(blood, std::move(bloodRend));
 	m_World->AddComponentToEntity<AnimationData>(blood, bloodAnim);
 	m_World->AddComponentToEntity<Lifetime>(blood, { bloodAnim.totalFrames * bloodAnim.frameTime });
 }
@@ -464,7 +464,7 @@ void EnemySystem::PreviewArrow(Entity enemyEnt) {
 	renderable.texture = &m_TextureManager->Load("Archer/Arrow_Preview");
 	if (enemyComp.stateChangeCd <= .2f) 	renderable.tint = sf::Color::Red;
 
-	m_World->AddComponentToEntity<Renderable>(arrowPreview, renderable);
+	m_World->AddComponentToEntity<Renderable>(arrowPreview, std::move(renderable));
 
 	Lifetime lifetime;
 	lifetime.remainingTime = 0.01f;
@@ -491,7 +491,7 @@ void EnemySystem::FireArrow(Entity enemyEnt) {
 	renderable.size = { 100, 10 };
 	renderable.layer = RenderLayer::GameObject1;
 	renderable.texture = &m_TextureManager->Load("Archer/Arrow");
-	m_World->AddComponentToEntity<Renderable>(arrow, renderable);
+	m_World->AddComponentToEntity<Renderable>(arrow, std::move(renderable));
 
 	Collider collider;
 	//sf::FloatRect arrowHitbox{ transform.position, {100, 10} };
@@ -513,7 +513,7 @@ void EnemySystem::FireArrow(Entity enemyEnt) {
 		//Create arrow break effect
 		Entity brokenArrow = m_World->CreateEntity();
 		m_World->AddComponentToEntity<Transform>(brokenArrow, m_World->GetComponent<Transform>(arrow));
-		m_World->AddComponentToEntity<Renderable>(brokenArrow, m_World->GetComponent<Renderable>(arrow));
+		m_World->AddComponentToEntity<Renderable>(brokenArrow, std::move(m_World->GetComponent<Renderable>(arrow)));
 		m_World->AddComponentToEntity<AnimationData>(brokenArrow, {});
 		Renderable& newRend = m_World->GetComponent<Renderable>(brokenArrow);
 		AnimationData& newAnim = m_World->GetComponent<AnimationData>(brokenArrow);

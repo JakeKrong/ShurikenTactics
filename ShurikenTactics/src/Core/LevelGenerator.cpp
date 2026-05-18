@@ -149,7 +149,7 @@ void LevelGenerator::CreateLevelBorders() {
 	//Background
 	Entity background = m_prefCtx.world.CreateEntity();
 	m_prefCtx.world.AddComponentToEntity<Transform>(background, { {0.0f,0.0f} });
-	m_prefCtx.world.AddComponentToEntity<Renderable>(background, { { 1280, 720 }, RenderLayer::Background, &m_prefCtx.textures->Load("Dojo_Background"), true});
+	m_prefCtx.world.AddComponentToEntity<Renderable>(background, { { 1280, 720 }, &m_prefCtx.textures->Load("Dojo_Background"), nullptr, RenderLayer::Background });
 
 	//Walls
 	PrefabGen::Wall(m_prefCtx, { 0,0 }, { 50, 800 });

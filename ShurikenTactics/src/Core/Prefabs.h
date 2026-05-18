@@ -32,7 +32,7 @@ namespace PrefabGen {
 		renderable.size = size;
 		renderable.layer = RenderLayer::GameObject2;
 		renderable.texture = &prefCtx.textures->Load("Wooden_Pillar");
-		world.AddComponentToEntity<Renderable>(wall, renderable);
+		world.AddComponentToEntity<Renderable>(wall, std::move(renderable));
 
 		Collider collider;
 		sf::FloatRect rectCollider{ position, size };
@@ -55,7 +55,7 @@ namespace PrefabGen {
 		renderable.size = size;
 		renderable.layer = RenderLayer::GameObject2;
 		renderable.texture = &prefCtx.textures->Load("Wood_Floor");
-		world.AddComponentToEntity<Renderable>(floor, renderable);
+		world.AddComponentToEntity<Renderable>(floor, std::move(renderable));
 
 		Collider collider;
 		sf::FloatRect rectCollider{ position, size };
@@ -78,7 +78,7 @@ namespace PrefabGen {
 		renderable.size = size;
 		renderable.layer = RenderLayer::GameObject2;
 		renderable.texture = &prefCtx.textures->Load("Wooden_Platform");
-		world.AddComponentToEntity<Renderable>(floor, renderable);
+		world.AddComponentToEntity<Renderable>(floor, std::move(renderable));
 
 		Collider collider;
 		sf::FloatRect rectCollider{ position, {size.x, size.y / 2} };
@@ -102,7 +102,7 @@ namespace PrefabGen {
 		renderable.layer = RenderLayer::GameObject2;
 		renderable.texture = &prefCtx.textures->Load("Wooden_Platform_Sided");
 		renderable.flipX = flip;
-		world.AddComponentToEntity<Renderable>(floor, renderable);
+		world.AddComponentToEntity<Renderable>(floor, std::move(renderable));
 
 		Collider collider;
 		sf::FloatRect rectCollider{ position, {size.x, size.y / 2} };
@@ -126,7 +126,7 @@ namespace PrefabGen {
 		renderable.layer = RenderLayer::UI;
 		renderable.texture = &prefCtx.textures->Load("Effects/Sliding_Door");
 		renderable.flipX = flipRend;
-		world.AddComponentToEntity<Renderable>(door, renderable);
+		world.AddComponentToEntity<Renderable>(door, std::move(renderable));
 
 		Lifetime lifetime;
 		lifetime.remainingTime = 0.6f;
@@ -148,7 +148,7 @@ namespace PrefabGen {
 		renderable.layer = RenderLayer::UI;
 		renderable.texture = &prefCtx.textures->Load("Effects/Sliding_Door");
 		renderable.flipX = flipRend;
-		world.AddComponentToEntity<Renderable>(door, renderable);
+		world.AddComponentToEntity<Renderable>(door, std::move(renderable));
 
 		Physics physics;
 		velocity ? physics.velocity.x = 700 : physics.velocity.x = -700;
@@ -176,7 +176,7 @@ namespace PrefabGen {
 		renderable.size = { 80, 100 };
 		renderable.layer = RenderLayer::Player;
 		renderable.texture = &prefCtx.textures->Load("Player_Idle_Sprite");
-		world.AddComponentToEntity<Renderable>(player, renderable);
+		world.AddComponentToEntity<Renderable>(player, std::move(renderable));
 
 		AnimationData animationData;
 		animationData.spriteSheetDim = { 4,1 };
@@ -216,7 +216,7 @@ namespace PrefabGen {
 		renderable.size = { 30, 30 };
 		renderable.layer = RenderLayer::GameObject1;
 		renderable.texture = &prefCtx.textures->Load("Shuriken");
-		world.AddComponentToEntity<Renderable>(shuriken, renderable);
+		world.AddComponentToEntity<Renderable>(shuriken, std::move(renderable));
 
 		AnimationData animationData;
 		animationData.spriteSheetDim = { 3,1 };
@@ -244,7 +244,7 @@ namespace PrefabGen {
 			renderable.size = { 30.0f, 30.0f };
 			renderable.layer = RenderLayer::GameObject1;
 			renderable.texture = &prefCtx.textures->Load("Shuriken_Break");
-			world.AddComponentToEntity<Renderable>(destroyEffect, renderable);
+			world.AddComponentToEntity<Renderable>(destroyEffect, std::move(renderable));
 
 			AnimationData animationData;
 			animationData.spriteSheetDim = { 3,1 };
@@ -283,7 +283,7 @@ namespace PrefabGen {
 		renderable.size = { 300, 130 };
 		renderable.layer = RenderLayer::GameObject1;
 		renderable.texture = &prefCtx.textures->Load("Samurai/Idle");
-		world.AddComponentToEntity<Renderable>(samurai, renderable);
+		world.AddComponentToEntity<Renderable>(samurai, std::move(renderable));
 
 		AnimationData animData;
 		prefCtx.textures->SetAnimationData("Samurai/Idle", animData);
@@ -325,7 +325,7 @@ namespace PrefabGen {
 		renderable.size = { 300, 200 };
 		renderable.layer = RenderLayer::GameObject1;
 		renderable.texture = &prefCtx.textures->Load("Archer/Idle");
-		world.AddComponentToEntity<Renderable>(archer, renderable);
+		world.AddComponentToEntity<Renderable>(archer, std::move(renderable));
 
 		AnimationData animData;
 		prefCtx.textures->SetAnimationData("Archer/Idle", animData);
@@ -366,7 +366,7 @@ namespace PrefabGen {
 		renderable.size = { 50, 5 };
 		renderable.layer = RenderLayer::GameObject1;
 		renderable.texture = &prefCtx.textures->Load("Archer/Arrow");
-		world.AddComponentToEntity<Renderable>(arrow, renderable);
+		world.AddComponentToEntity<Renderable>(arrow, std::move(renderable));
 
 		Collider collider;
 		sf::FloatRect arrowHitbox{ { 50, 5 }, {} };
@@ -397,7 +397,7 @@ namespace PrefabGen {
 		renderable.size = { 60, 100 };
 		renderable.layer = RenderLayer::GameObject1;
 		renderable.texture = &prefCtx.textures->Load("Strawman_Target");
-		world.AddComponentToEntity<Renderable>(target, renderable);
+		world.AddComponentToEntity<Renderable>(target, std::move(renderable));
 
 		Collider collider;
 		sf::FloatRect targetHitbox;
@@ -432,7 +432,7 @@ namespace PrefabGen {
 		renderable.size = { 30, 30 };
 		renderable.layer = RenderLayer::UI;
 		renderable.texture = &prefCtx.textures->Load("Controls/" + keyName);
-		world.AddComponentToEntity<Renderable>(key, renderable);
+		world.AddComponentToEntity<Renderable>(key, std::move(renderable));
 
 		return key;
 	}
@@ -454,9 +454,9 @@ namespace PrefabGen {
 
 		Renderable renderable;
 		renderable.layer = RenderLayer::UI;
-		renderable.text = text;
+		renderable.text = std::make_unique<sf::Text>(text);
 
-		world.AddComponentToEntity<Renderable>(key, renderable);
+		world.AddComponentToEntity<Renderable>(key, std::move(renderable));
 
 		return key;
 	}

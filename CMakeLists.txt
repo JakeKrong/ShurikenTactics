@@ -10,7 +10,13 @@ FetchContent_Declare(
 	GIT_REPOSITORY https://github.com/SFML/SFML.git
 	GIT_TAG 3.0.0
 )
-FetchContent_MakeAvailable(sfml)
+#Fetch Catch2
+FetchContent_Declare(
+	Catch2
+	GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+	GIT_TAG v3.4.0
+)
+FetchContent_MakeAvailable(sfml Catch2)
 
 # Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
@@ -20,6 +26,3 @@ endif()
 
 # Include sub-projects.
 add_subdirectory ("ShurikenTactics")
-
-
-				

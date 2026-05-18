@@ -241,7 +241,7 @@ void ColliderSystem::RegisterHandlers() {
 				AnimationData bloodAnim;
 				bloodRend.flipX = true;
 				m_TextureManager->ChangeEntitySprite("Effects/Blood", bloodRend, bloodAnim);
-				m_World->AddComponentToEntity<Renderable>(blood, bloodRend);
+				m_World->AddComponentToEntity<Renderable>(blood, std::move(bloodRend));
 				m_World->AddComponentToEntity<AnimationData>(blood, bloodAnim);
 				m_World->AddComponentToEntity<Lifetime>(blood, { bloodAnim.totalFrames * bloodAnim.frameTime });
 			}
@@ -266,7 +266,7 @@ void ColliderSystem::RegisterHandlers() {
 				AnimationData bloodAnim;
 				bloodRend.flipX = true;
 				m_TextureManager->ChangeEntitySprite("Effects/Blood", bloodRend, bloodAnim);
-				m_World->AddComponentToEntity<Renderable>(blood, bloodRend);
+				m_World->AddComponentToEntity<Renderable>(blood, std::move(bloodRend));
 				m_World->AddComponentToEntity<AnimationData>(blood, bloodAnim);
 				m_World->AddComponentToEntity<Lifetime>(blood, { bloodAnim.totalFrames * bloodAnim.frameTime });
 			}

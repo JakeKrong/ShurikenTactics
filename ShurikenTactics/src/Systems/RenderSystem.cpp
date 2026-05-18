@@ -58,8 +58,8 @@ void RenderSystem::Update(sf::RenderWindow& renderWindow, const float& deltaTime
 		}
 
 		//Check if it has a text
-		if (renderComp.text.has_value()) {
-			sf::Text text = renderComp.text.value();
+		if (renderComp.text) {
+			sf::Text text = *renderComp.text;
 			text.setPosition(transformComp.position);
 			renderable.setFillColor(sf::Color::Transparent);
 			renderWindow.draw(text);
@@ -112,7 +112,7 @@ void RenderSystem::SetAnimationFrame(const Renderable& renderableComp, Animation
 		if (animationComp.currentFrame + 1 >= animationComp.totalFrames && !animationComp.loopAnim) {
 			if (animationComp.currentFrame + 1 == animationComp.totalFrames) {
 				animationComp.currentFrame += 1;
-				if (animationComp.OnAnimationEnd != nullptr) animationComp.OnAnimationEnd();
+				if (animationComp.OnAnimationEnd) animationComp.OnAnimationEnd();
 			}
 			return;
 		}

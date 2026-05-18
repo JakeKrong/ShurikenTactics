@@ -37,6 +37,7 @@ void Game::Run() {
 		m_StateManager.Update(deltaTime, m_Window);
 
 		m_StateManager.Render(m_Window, deltaTime);
+		//std::cout << deltaTime << "\n";
 	}
 }
 
