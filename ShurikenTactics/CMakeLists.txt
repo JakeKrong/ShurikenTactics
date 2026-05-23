@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt : CMake project for ShurikenTactics, include source and define project specific logic here.
 
 set (GAME_SOURCES 
-"src/ShurikenTactics.h" 
+"src/ShurikenTactics.cpp" 
 "src/Core/Types.h" 
 "src/Core/EntityManager.h"	"src/Core/EntityManager.cpp" 
 "src/Core/ComponentManager.h"

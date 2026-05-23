@@ -1,5 +1,4 @@
 #include "LevelGenerator.h"
-#include <iostream>
 
 bool LevelGenerator::LoadLevel(int level) {
 
@@ -148,8 +147,8 @@ bool LevelGenerator::LoadLevel(int level) {
 void LevelGenerator::CreateLevelBorders() {
 	//Background
 	Entity background = m_prefCtx.world.CreateEntity();
-	m_prefCtx.world.AddComponentToEntity<Transform>(background, { {0.0f,0.0f} });
-	m_prefCtx.world.AddComponentToEntity<Renderable>(background, { { 1280, 720 }, &m_prefCtx.textures->Load("Dojo_Background"), nullptr, RenderLayer::Background });
+	m_prefCtx.world.AddComponentToEntity<Transform>(background, Transform{ {0.0f,0.0f} });
+	m_prefCtx.world.AddComponentToEntity<Renderable>(background, Renderable{ { 1280, 720 }, &m_prefCtx.textures->Load("Dojo_Background"), nullptr, RenderLayer::Background });
 
 	//Walls
 	PrefabGen::Wall(m_prefCtx, { 0,0 }, { 50, 800 });
@@ -163,7 +162,6 @@ void LevelGenerator::CreateLevelBorders() {
 void LevelGenerator::CreateStartingDoors() {
 	World& world = m_prefCtx.world;
 	Entity leftDoor = PrefabGen::StaticDoor(m_prefCtx, {0,0}, false);
-	std::cout << "Outside OnDestroyed Function    " << &m_prefCtx.world << "|" << m_prefCtx.textures << "\n";
 	PrefabContext prefCtx = m_prefCtx;
 
 	world.GetComponent<Lifetime>(leftDoor).OnDestroyedFunction = [prefCtx](Entity) {

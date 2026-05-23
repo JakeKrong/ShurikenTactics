@@ -1,11 +1,6 @@
 #pragma once
 #include "Game.h"
 #include "Components.h"
-#include <cassert>
-
-//Test
-#include <print>
-#include <iostream>
 
 struct PrefabContext {
 	World& world;
@@ -426,7 +421,7 @@ namespace PrefabGen {
 		Entity key = world.CreateEntity();
 
 		Transform transform;
-		world.AddComponentToEntity<Transform>(key, { position });
+		world.AddComponentToEntity<Transform>(key, Transform{ position });
 
 		Renderable renderable;
 		renderable.size = { 30, 30 };
@@ -443,7 +438,7 @@ namespace PrefabGen {
 		Entity key = world.CreateEntity();
 
 		Transform transform;
-		world.AddComponentToEntity<Transform>(key, { position });
+		world.AddComponentToEntity<Transform>(key, Transform{ position });
 
 		const sf::Font& font(prefCtx.font->Load("CENTAUR"));	
 		sf::Text text(font);
