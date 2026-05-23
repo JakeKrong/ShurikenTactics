@@ -38,35 +38,35 @@ void MainMenuState::Enter() {  //Initialise Main Menu
 	// *** Set Entites *** //
 	//Background
 	Entity background = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(background, { {0.0f,0.0f} });
-	world.AddComponentToEntity<Renderable>(background, {{ 1280, 720 }, RenderLayer::Background, &m_Game->GetTextureManager().Load("Dojo_TitleScreen"), true});
+	world.AddComponentToEntity<Transform>(background, Transform{ {0.0f,0.0f} });
+	world.AddComponentToEntity<Renderable>(background, Renderable{{ 1280, 720 }, &m_Game->GetTextureManager().Load("Dojo_TitleScreen"), nullptr, RenderLayer::Background });
 
 	//Title
 	Entity title = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(title, { {430,60} });
-	world.AddComponentToEntity<Renderable>(title, { { 420, 260 }, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/ShurikenTactics_Title"), true });
+	world.AddComponentToEntity<Transform>(title, Transform{ {430,60} });
+	world.AddComponentToEntity<Renderable>(title, Renderable{ { 420, 260 }, &m_Game->GetTextureManager().Load("UI/ShurikenTactics_Title"), nullptr, RenderLayer::UI });
 
 	// --- Buttons ---
 	Entity startButton = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(startButton, { {430,400} });
-	world.AddComponentToEntity<Renderable>(startButton, { { 420, 100 }, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/Button_StartGame"), true });
-	world.AddComponentToEntity<Button>(startButton, { {420, 100}, [this]() {
+	world.AddComponentToEntity<Transform>(startButton, Transform{ {430,400} });
+	world.AddComponentToEntity<Renderable>(startButton, Renderable{ { 420, 100 }, &m_Game->GetTextureManager().Load("UI/Button_StartGame"), nullptr, RenderLayer::UI });
+	world.AddComponentToEntity<Button>(startButton, Button{ {420, 100}, [this]() {
 		m_Game->GetSoundManager().PlaySound("Button_Click");
-		m_Game->m_StateManager.EnqueueStateChange(CreateScope<PlayingState>(this->m_Game));
+		m_Game->m_StateManager.EnqueueStateChange(CreateScope<PlayingState>(m_Game));
 	}});
 
 	Entity quitButton = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(quitButton, { {430.0f, 530.0f} });
-	world.AddComponentToEntity<Renderable>(quitButton, { { 420, 100 }, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/Button_QuitGame"), true });
-	world.AddComponentToEntity<Button>(quitButton, { {420, 100}, [this]() {
+	world.AddComponentToEntity<Transform>(quitButton, Transform{ {430.0f, 530.0f} });
+	world.AddComponentToEntity<Renderable>(quitButton, Renderable{ { 420, 100 }, &m_Game->GetTextureManager().Load("UI/Button_QuitGame"), nullptr, RenderLayer::UI });
+	world.AddComponentToEntity<Button>(quitButton, Button{ {420, 100}, [this]() {
 		m_Game->GetSoundManager().PlaySound("Button_Click");
 		m_Game->GetWindow().close();
 	} });
 
 	Entity tutorialButton = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(tutorialButton, { {350, 415} });
-	world.AddComponentToEntity<Renderable>(tutorialButton, { { 65, 60 }, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/Question_Button"), true });
-	world.AddComponentToEntity<Button>(tutorialButton, { {65, 60}, [this]() {
+	world.AddComponentToEntity<Transform>(tutorialButton, Transform{ {350, 415} });
+	world.AddComponentToEntity<Renderable>(tutorialButton, Renderable{ { 65, 60 }, &m_Game->GetTextureManager().Load("UI/Question_Button"), nullptr, RenderLayer::UI });
+	world.AddComponentToEntity<Button>(tutorialButton, Button{ {65, 60}, [this]() {
 		EnableButtons(false);
 		ShowTutorial(); 
 		m_Game->GetSoundManager().PlaySound("Button_Click");
@@ -74,14 +74,14 @@ void MainMenuState::Enter() {  //Initialise Main Menu
 
 	//Volume Control
 	Entity volumeBar = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(volumeBar, { {950, 415} });
-	world.AddComponentToEntity<Renderable>(volumeBar, { { 300, 55 }, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/Volume_Bar"), false });
+	world.AddComponentToEntity<Transform>(volumeBar, Transform{ {950, 415} });
+	world.AddComponentToEntity<Renderable>(volumeBar, Renderable{ { 300, 55 }, &m_Game->GetTextureManager().Load("UI/Volume_Bar"), nullptr, RenderLayer::UI, false });
 
 	Entity volumeSlider = world.CreateEntity();
 	float sliderX = 975 + ((float)GlobalVolumeLevel / DefaultVolumeSetting * 225);
-	world.AddComponentToEntity<Transform>(volumeSlider, { {sliderX, 428} });
-	world.AddComponentToEntity<Renderable>(volumeSlider, { { 25, 25 }, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/Volume_Slider"), false });
-	world.AddComponentToEntity<Button>(volumeSlider, { {65, 60}, []() {}, [&, volumeSlider](sf::Vector2f mousePos) {
+	world.AddComponentToEntity<Transform>(volumeSlider, Transform{ {sliderX, 428} });
+	world.AddComponentToEntity<Renderable>(volumeSlider, Renderable{ { 25, 25 }, &m_Game->GetTextureManager().Load("UI/Volume_Slider"), nullptr, RenderLayer::UI, false });
+	world.AddComponentToEntity<Button>(volumeSlider, Button{ {65, 60}, []() {}, [&, volumeSlider](sf::Vector2f mousePos) {
 		Renderable& sliderRend = m_Game->GetWorld().GetComponent<Renderable>(volumeSlider);
 		if (!sliderRend.visible) return;
 		Transform& sliderTrans = m_Game->GetWorld().GetComponent<Transform>(volumeSlider);
@@ -92,9 +92,9 @@ void MainMenuState::Enter() {  //Initialise Main Menu
 	});
 
 	Entity volumeButton = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(volumeButton, { {870, 415} });
-	world.AddComponentToEntity<Renderable>(volumeButton, { { 65, 60 }, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/Volume_Button"), true });
-	world.AddComponentToEntity<Button>(volumeButton, { {65, 60}, [this, volumeBar, volumeSlider]() {
+	world.AddComponentToEntity<Transform>(volumeButton, Transform{ {870, 415} });
+	world.AddComponentToEntity<Renderable>(volumeButton, Renderable{ { 65, 60 }, &m_Game->GetTextureManager().Load("UI/Volume_Button"), nullptr, RenderLayer::UI });
+	world.AddComponentToEntity<Button>(volumeButton, Button{ {65, 60}, [this, volumeBar, volumeSlider]() {
 		m_Game->GetSoundManager().PlaySound("Button_Click");
 		Renderable& volumeBarRend = m_Game->GetWorld().GetComponent<Renderable>(volumeBar);
 		Renderable& volumeSliderRend = m_Game->GetWorld().GetComponent<Renderable>(volumeSlider);
@@ -133,12 +133,12 @@ void MainMenuState::ShowTutorial() {
 	int totalTutorialPages = 5;
 
 	Entity darkOverlay = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(darkOverlay, {});
-	world.AddComponentToEntity<Renderable>(darkOverlay, { {1280, 720}, RenderLayer::UI, nullptr, true, false, sf::Color{0,0,0,220} });
+	world.AddComponentToEntity<Transform>(darkOverlay, Transform{});
+	world.AddComponentToEntity<Renderable>(darkOverlay, Renderable{ {1280, 720}, nullptr, nullptr, RenderLayer::UI, true, false, sf::Color{0,0,0,220} });
 
 	Entity tutorialImg = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(tutorialImg, { {240, 20} });
-	world.AddComponentToEntity<Renderable>(tutorialImg, { {800, 450}, RenderLayer::UI, &m_Game->GetTextureManager().Load("Tutorial/1")});
+	world.AddComponentToEntity<Transform>(tutorialImg, Transform{ {240, 20} });
+	world.AddComponentToEntity<Renderable>(tutorialImg, Renderable{ {800, 450}, &m_Game->GetTextureManager().Load("Tutorial/1"), nullptr, RenderLayer::UI });
 
 	PrefabContext prefabCtx = { world, &m_Game->GetTextureManager(), &m_Game->GetSoundManager(), &m_Game->GetFontManager()};
 
@@ -146,41 +146,41 @@ void MainMenuState::ShowTutorial() {
 	Entity pageInd = PrefabGen::Text(prefabCtx, { 618, 650 }, "1 / " + std::to_string(totalTutorialPages), 20, sf::Color::White);
 
 	Entity prevPageButton = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(prevPageButton, { {100, 500} });
-	world.AddComponentToEntity<Renderable>(prevPageButton, { {30, 30}, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/Button_Next"), true, true });
-	world.AddComponentToEntity<Button>(prevPageButton, { {30, 30}, [&, pageInd, tutorialImg, tutorialText, totalTutorialPages]() {
+	world.AddComponentToEntity<Transform>(prevPageButton, Transform{ {100, 500} });
+	world.AddComponentToEntity<Renderable>(prevPageButton, Renderable{ {30, 30}, &m_Game->GetTextureManager().Load("UI/Button_Next"), nullptr, RenderLayer::UI });
+	world.AddComponentToEntity<Button>(prevPageButton, Button{ {30, 30}, [&, pageInd, tutorialImg, tutorialText, totalTutorialPages]() {
 		m_Game->GetSoundManager().PlaySound("Button_Click");
-		int pageNumber = world.GetComponent<Renderable>(pageInd).text.value().getString()[0] - '0';
+		int pageNumber = world.GetComponent<Renderable>(pageInd).text->getString()[0] - '0';
 
 		pageNumber--;
 		if (pageNumber == 0) pageNumber = totalTutorialPages;
 
-		world.GetComponent<Renderable>(pageInd).text.value().setString(std::to_string(pageNumber) + " / " + std::to_string(totalTutorialPages));
+		world.GetComponent<Renderable>(pageInd).text->setString(std::to_string(pageNumber) + " / " + std::to_string(totalTutorialPages));
 		world.GetComponent<Renderable>(tutorialImg).texture = &m_Game->GetTextureManager().Load("Tutorial/" + std::to_string(pageNumber));
-		world.GetComponent<Renderable>(tutorialText).text.value().setString(PrefabGen::TutorialText(pageNumber));
+		world.GetComponent<Renderable>(tutorialText).text->setString(PrefabGen::TutorialText(pageNumber));
 
 		} });
 
 	Entity nextPageButton = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(nextPageButton, { {1150, 500} });
-	world.AddComponentToEntity<Renderable>(nextPageButton, { {30, 30}, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/Button_Next") });
-	world.AddComponentToEntity<Button>(nextPageButton, { {30, 30}, [&, pageInd, tutorialImg, tutorialText, totalTutorialPages]() {
+	world.AddComponentToEntity<Transform>(nextPageButton, Transform{ {1150, 500} });
+	world.AddComponentToEntity<Renderable>(nextPageButton, Renderable{ {30, 30}, &m_Game->GetTextureManager().Load("UI/Button_Next"), nullptr, RenderLayer::UI });
+	world.AddComponentToEntity<Button>(nextPageButton, Button{ {30, 30}, [&, pageInd, tutorialImg, tutorialText, totalTutorialPages]() {
 		m_Game->GetSoundManager().PlaySound("Button_Click");
-		int pageNumber = world.GetComponent<Renderable>(pageInd).text.value().getString()[0] - '0';
+		int pageNumber = world.GetComponent<Renderable>(pageInd).text->getString()[0] - '0';
 
 		pageNumber++;
 		if (pageNumber > totalTutorialPages) pageNumber = 1;
 
-		world.GetComponent<Renderable>(pageInd).text.value().setString(std::to_string(pageNumber) + " / " + std::to_string(totalTutorialPages));
+		world.GetComponent<Renderable>(pageInd).text->setString(std::to_string(pageNumber) + " / " + std::to_string(totalTutorialPages));
 		world.GetComponent<Renderable>(tutorialImg).texture = &m_Game->GetTextureManager().Load("Tutorial/" + std::to_string(pageNumber));
-		world.GetComponent<Renderable>(tutorialText).text.value().setString(PrefabGen::TutorialText(pageNumber));
+		world.GetComponent<Renderable>(tutorialText).text->setString(PrefabGen::TutorialText(pageNumber));
 		} });
 
 
 	Entity goBackButton = world.CreateEntity();
-	world.AddComponentToEntity<Transform>(goBackButton, { {625, 680} });
-	world.AddComponentToEntity<Renderable>(goBackButton, { {30, 30}, RenderLayer::UI, &m_Game->GetTextureManager().Load("UI/Button_X") });
-	world.AddComponentToEntity<Button>(goBackButton, { {30, 30}, [&, darkOverlay, tutorialImg, tutorialText, goBackButton, pageInd, prevPageButton, nextPageButton]() {
+	world.AddComponentToEntity<Transform>(goBackButton, Transform{ {625, 680} });
+	world.AddComponentToEntity<Renderable>(goBackButton, Renderable{ {30, 30}, &m_Game->GetTextureManager().Load("UI/Button_X"), nullptr, RenderLayer::UI });
+	world.AddComponentToEntity<Button>(goBackButton, Button{ {30, 30}, [&, darkOverlay, tutorialImg, tutorialText, goBackButton, pageInd, prevPageButton, nextPageButton]() {
 		m_Game->GetSoundManager().PlaySound("Button_Click");
 		world.DestroyEntity(darkOverlay);
 		world.DestroyEntity(tutorialImg);

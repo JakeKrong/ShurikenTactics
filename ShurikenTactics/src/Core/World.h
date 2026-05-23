@@ -22,9 +22,9 @@ public:
 		m_ComponentManager->RegisterComponent<T>();
 	}
 
-	template<typename T>
-	void AddComponentToEntity(Entity ent, T comp) {
-		m_ComponentManager->AddComponent<T>(ent, comp);
+	template<typename T, typename... Args>
+	void AddComponentToEntity(Entity ent, Args&&... args) {
+		m_ComponentManager->AddComponent<T>(ent, std::forward<Args>(args)...);
 
 		auto& updatedSig = m_EntityManager->GetSignature(ent);
 		updatedSig.set(m_ComponentManager->GetComponentID<T>(), true); //Set the signature bit (based on component type's ID to trues)
@@ -32,6 +32,7 @@ public:
 		m_EntityManager->SetSignature(ent, updatedSig);
 		m_SystemManager->EntitySignatureChanged(ent, updatedSig);
 	}
+
 	template<typename T>
 	void RemoveComponentFromEntity(Entity ent) {
 		m_ComponentManager->RemoveComponent<T>(ent);

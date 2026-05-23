@@ -5,10 +5,7 @@
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/Text.hpp>
 #include "Transform.h"
-#include <optional>
-
-//const float DEFAULT_SIZE = 30.0f;
-//sf::Color DEFAULT_COLOR{ sf::Color::White };
+#include <memory>
 
 enum class RenderLayer : uint8_t{
 	Background,
@@ -20,12 +17,12 @@ enum class RenderLayer : uint8_t{
 
 struct Renderable {
 	sf::Vector2f size{ 10.0f, 10.0f };
-	RenderLayer layer{0};
 	sf::Texture* texture = nullptr;
+	std::unique_ptr<sf::Text> text = nullptr;
+	RenderLayer layer{ 0 };
 	bool visible{ true };
 	bool flipX = false;
 	sf::Color tint = sf::Color::White;
-	std::optional<sf::Text> text;
 };
 
 struct AnimationData {

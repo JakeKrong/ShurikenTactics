@@ -16,7 +16,7 @@ enum class EnemyState : uint8_t{
 	Attack
 };
 
-enum class EnemyType {
+enum class EnemyType : uint8_t {
 	Samurai,
 	Archer
 };

@@ -21,12 +21,13 @@ public:
 		m_ComponentArray.resize(ENTITY_CAP);
 	}
 
-	void AddComponent(Entity ent, T comp) {
+	template<typename... Args>
+	void AddComponent(Entity ent, Args&&...args) {
 		assert(m_EntityToIndexMap.find(ent) == m_EntityToIndexMap.end() && "Component already added into entity once!");
 
 		m_EntityToIndexMap[ent] = m_Index;
 		m_IndexToEntityMap[m_Index] = ent;
-		m_ComponentArray[m_Index] = comp;
+		m_ComponentArray[m_Index] = T{std::forward<Args>(args)...};
 
 		m_Index++;
 	}
@@ -37,7 +38,7 @@ public:
 		//Swap the index of removed component with the last component in the vector and maps
 		size_t RemovedEntityIndex = m_EntityToIndexMap[ent];
 		size_t LastEntityIndex = m_Index - 1;
-		m_ComponentArray[RemovedEntityIndex] = m_ComponentArray[LastEntityIndex];
+		m_ComponentArray[RemovedEntityIndex] = std::move(m_ComponentArray[LastEntityIndex]);
 
 		Entity lastMapEntity = m_IndexToEntityMap[LastEntityIndex];
 		m_EntityToIndexMap[lastMapEntity] = RemovedEntityIndex;
@@ -108,20 +109,12 @@ public:
 		return m_ComponentIDs[componentType];
 	}
 
-	//template<typename T>
-	//void AddComponent(Entity ent, T comp) {
-	//	std::type_index componentType = typeid(T);
-	//	assert(m_ComponentIDs.find(componentType) != m_ComponentIDs.end() && "Adding a Component Type is that is Not Registered!");
-
-	//	m_ComponentArraysMap[componentType]->AddComponent(ent, comp);
-	//}
-
 	template<typename T, typename... Args>
 	void AddComponent(Entity ent, Args&&... args) {
 		std::type_index componentType = typeid(T);
 		assert(m_ComponentIDs.find(componentType) != m_ComponentIDs.end() && "Adding a Component Type is that is Not Registered!");
 
-		GetComponentArray<T>()->AddComponent(ent, args...);
+		GetComponentArray<T>()->AddComponent(ent, std::forward<Args>(args)...);
 	}
 
 	template<typename T>

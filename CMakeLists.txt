@@ -1,6 +1,7 @@
 ﻿# CMakeList.txt : Top-level CMake project file, do global configuration and include sub-projects here.
 
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.15)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 project("ShurikenTactics" VERSION 0.1.0)
 
 #Fetch SFML
@@ -10,7 +11,13 @@ FetchContent_Declare(
 	GIT_REPOSITORY https://github.com/SFML/SFML.git
 	GIT_TAG 3.0.0
 )
-FetchContent_MakeAvailable(sfml)
+#Fetch Catch2
+FetchContent_Declare(
+	Catch2
+	GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+	GIT_TAG v3.4.0
+)
+FetchContent_MakeAvailable(sfml Catch2)
 
 # Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
@@ -20,6 +27,3 @@ endif()
 
 # Include sub-projects.
 add_subdirectory ("ShurikenTactics")
-
-
-				

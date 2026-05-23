@@ -1,14 +1,10 @@
 ﻿#include "TrajectoryMath.h"
 #include "Types.h"
-#include "Transform.h"
 #include "Renderable.h"
 #include "Collider.h"
 
 #include <limits>
 #include <optional>
-
-//Debug
-#include <print>
 
 static constexpr float EPSILON = 0.001f;
 
