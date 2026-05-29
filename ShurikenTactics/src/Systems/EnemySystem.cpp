@@ -14,7 +14,8 @@
 void EnemySystem::Update(const float& deltaTime) {
 	if (!m_World) return;
 
-	for (Entity ent : m_Entities) {
+	auto entites = m_Entities; //Create stable vector for update loop to iterate over
+	for (Entity ent : entites) {
 		Enemy& enemyComp = m_World->GetComponent<Enemy>(ent);
 		Transform& enemyTrans = m_World->GetComponent<Transform>(ent);
 		

@@ -56,7 +56,7 @@ public:
 
 	template <typename T>
 	std::vector<std::pair<Entity, T*>> GetAllComponentsOfType() {
-		return m_ComponentManager->GetComponentArray<T>()->GetAllComponents();
+		return m_ComponentManager->GetComponentArray<T>().GetAllComponents();
 	}
 
 	template<typename T>

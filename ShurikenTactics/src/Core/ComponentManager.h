@@ -27,7 +27,7 @@ public:
 
 		m_EntityToIndexMap[ent] = m_Index;
 		m_IndexToEntityMap[m_Index] = ent;
-		m_ComponentArray[m_Index] = T{std::forward<Args>(args)...};
+		m_ComponentArray[m_Index] = {std::forward<Args>(args)...};
 
 		m_Index++;
 	}
@@ -36,16 +36,19 @@ public:
 		assert(m_EntityToIndexMap.find(ent) != m_EntityToIndexMap.end() && "Removing non-existent component!");
 
 		//Swap the index of removed component with the last component in the vector and maps
-		size_t RemovedEntityIndex = m_EntityToIndexMap[ent];
-		size_t LastEntityIndex = m_Index - 1;
-		m_ComponentArray[RemovedEntityIndex] = std::move(m_ComponentArray[LastEntityIndex]);
+		size_t removedIndex = m_EntityToIndexMap[ent];
+		size_t lastIndex = m_Index - 1;
 
-		Entity lastMapEntity = m_IndexToEntityMap[LastEntityIndex];
-		m_EntityToIndexMap[lastMapEntity] = RemovedEntityIndex;
-		m_IndexToEntityMap[RemovedEntityIndex] = lastMapEntity;
+		if (removedIndex != lastIndex) {
+			m_ComponentArray[removedIndex] = std::move(m_ComponentArray[lastIndex]);
+
+			Entity lastMapEntity = m_IndexToEntityMap[lastIndex];
+			m_EntityToIndexMap[lastMapEntity] = removedIndex;
+			m_IndexToEntityMap[removedIndex] = lastMapEntity;
+		}
 
 		m_EntityToIndexMap.erase(ent);
-		m_IndexToEntityMap.erase(LastEntityIndex);
+		m_IndexToEntityMap.erase(lastIndex);
 
 		m_Index--;
 	}
@@ -66,10 +69,9 @@ public:
 		}
 	}
 
-	//For testing only
 	std::vector<std::pair<Entity,T*>> GetAllComponents(){
 		std::vector<std::pair<Entity,T*>> componentVect;
-		componentVect.reserve(m_Index + 1);
+		componentVect.reserve(m_Index);
 		for (auto& [ent, idx] : m_EntityToIndexMap) {
 			componentVect.push_back({ ent, &m_ComponentArray[idx] });
 		}
@@ -114,7 +116,7 @@ public:
 		std::type_index componentType = typeid(T);
 		assert(m_ComponentIDs.find(componentType) != m_ComponentIDs.end() && "Adding a Component Type is that is Not Registered!");
 
-		GetComponentArray<T>()->AddComponent(ent, std::forward<Args>(args)...);
+		GetComponentArray<T>().AddComponent(ent, std::forward<Args>(args)...);
 	}
 
 	template<typename T>
@@ -122,7 +124,7 @@ public:
 		std::type_index componentType = typeid(T);
 		assert(m_ComponentIDs.find(componentType) != m_ComponentIDs.end() && "Removing a Component Type is that is Not Registered!");
 
-		GetComponentArray<T>()->RemoveComponent(ent);
+		GetComponentArray<T>().RemoveComponent(ent);
 	}
 
 	void EntityDestroyed(Entity ent) {
@@ -132,18 +134,18 @@ public:
 	}
 
 	template<typename T>
-	Ref<ComponentArray<T>> GetComponentArray() {
+	ComponentArray<T>& GetComponentArray() {
 		std::type_index componentType = typeid(T);
 		assert(m_ComponentArraysMap.find(componentType) != m_ComponentArraysMap.end() && "Trying to Get a Non-Registered Component!");
 
-		return std::static_pointer_cast<ComponentArray<T>>(m_ComponentArraysMap[componentType]);
+		return *static_cast<ComponentArray<T>*>(m_ComponentArraysMap[componentType].get());
 	}
 
 	template<typename T>
 	T& GetComponentData(Entity ent) {
 		std::type_index componentType = typeid(T);
 		assert(m_ComponentArraysMap.find(componentType) != m_ComponentArraysMap.end() && "Trying to Get a Non-Registered Component!");
-		return GetComponentArray<T>()->GetComponentData(ent);
+		return GetComponentArray<T>().GetComponentData(ent);
 	}
 
 	template<typename T>
@@ -152,7 +154,7 @@ public:
 		if (m_ComponentArraysMap.find(componentType) == m_ComponentArraysMap.end()) {
 			return false;
 		}
-		if (GetComponentArray<T>()->HasComponentData(ent)) return true;
+		if (GetComponentArray<T>().HasComponentData(ent)) return true;
 		return false;
 	}
 

@@ -19,7 +19,7 @@ struct Renderable {
 	sf::Vector2f size{ 10.0f, 10.0f };
 	sf::Texture* texture = nullptr;
 	std::unique_ptr<sf::Text> text = nullptr;
-	RenderLayer layer{ 0 };
+	RenderLayer layer{ RenderLayer::Background };
 	bool visible{ true };
 	bool flipX = false;
 	sf::Color tint = sf::Color::White;
